@@ -87,8 +87,26 @@ let state = { pub: EMPTY, priv: { books: [] }, user: null, busy: false };
 let filters = { genre: null, lang: null, lendable: false, mine: false };
 let tab = "shelf";
 
+// A transaction that never settles — the connection drops mid-write — used to
+// leave state.busy stuck true, because the reset sat after the try/catch instead
+// of in a finally. Every later write then returned silently at the busy guard:
+// adding a book, checking in and posting to the agenda all quietly stopped
+// working, with nothing on screen to say why. The finally and the timeout below
+// are what make that unwedgeable.
+const WRITE_TIMEOUT = 15000;
+
+function withTimeout(promise, ms = WRITE_TIMEOUT) {
+  let timer;
+  const bell = new Promise((_, reject) => {
+    timer = setTimeout(
+      () => reject(Object.assign(new Error("write timed out"), { code: "timeout" })), ms);
+  });
+  return Promise.race([promise, bell]).finally(() => clearTimeout(timer));
+}
+
 async function mutate(fn) {
-  if (state.busy) return;
+  // Never fail mute: a click that does nothing reads as a broken site.
+  if (state.busy) { showError("Still saving the last change. Give it a second."); return; }
   state.busy = true;
   hideError();
   if (DEMO) {
@@ -98,18 +116,26 @@ async function mutate(fn) {
     return;
   }
   try {
-    await fb.runTransaction(db, async (tx) => {
+    // The timeout only stops us waiting; if the write does land late, the
+    // snapshot listener picks it up like any other change.
+    await withTimeout(fb.runTransaction(db, async (tx) => {
       const snap = await tx.get(PUB);
       const cur = snap.exists() ? snap.data() : EMPTY;
       const next = fn(structuredClone({ ...EMPTY, ...cur }));
       tx.set(PUB, next);
-    });
+    }));
   } catch (e) {
-    showError(e?.code === "permission-denied"
-      ? "You're not on the member list for this circle. Ask whoever runs the group to add you."
-      : "That didn't save. Check your connection and give it another go.");
+    showError(
+      e?.code === "permission-denied"
+        ? "You're not on the member list for this circle. Ask whoever runs the group to add you."
+        : e?.code === "timeout"
+          ? "That took too long to save. Check your connection and try again."
+          // The code is worth showing: it is the difference between a dead
+          // network and a rule saying no.
+          : `That didn't save${e?.code ? ` (${e.code})` : ""}. Check your connection and give it another go.`);
+  } finally {
+    state.busy = false;   // always, however the write ended
   }
-  state.busy = false;
 }
 
 async function mutatePrivate(fn) {
@@ -542,7 +568,7 @@ $("add-toggle").addEventListener("click", () => {
 
 $("add-save").addEventListener("click", async () => {
   const title = $("f-title").value.trim();
-  if (!title) return;
+  if (!title) { showError("Give the book a title first."); $("f-title").focus(); return; }
   const book = {
     id: uid(), uid: state.user.uid, title,
     author: $("f-author").value.trim(), genre: $("f-genre").value,
@@ -610,7 +636,7 @@ $("checkin").addEventListener("click", async () => {
 
 $("board-post").addEventListener("click", async () => {
   const text = $("board-text").value.trim();
-  if (!text) return;
+  if (!text) { showError("Write something first."); $("board-text").focus(); return; }
   await mutate((c) => {
     c.board = [{ id: uid(), uid: state.user.uid, text, at: todayISO() },
       ...(c.board || [])].slice(0, BOARD_CAP);
