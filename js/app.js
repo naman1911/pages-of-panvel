@@ -158,10 +158,16 @@ $("signin").addEventListener("click", async () => {
   try {
     await fb.signInWithPopup(auth, new fb.GoogleAuthProvider());
   } catch (e) {
-    if (e?.code !== "auth/popup-closed-by-user") {
-      $("gate-msg").textContent = "Sign-in didn't go through. Try again?";
-      $("gate-msg").hidden = false;
-    }
+    if (e?.code === "auth/popup-closed-by-user") return;
+    // The two that actually happen say what to go and fix, because
+    // "try again" sends you round the same loop forever.
+    $("gate-msg").textContent =
+      e?.code === "auth/unauthorized-domain"
+        ? "This address isn't on the Firebase authorised-domains list yet."
+        : e?.code === "auth/operation-not-supported-in-this-environment"
+          ? "Sign-in needs a secure connection. Open the site over https."
+          : `Sign-in didn't go through${e?.code ? ` (${e.code})` : ""}. Try again?`;
+    $("gate-msg").hidden = false;
   }
 });
 $("signout").addEventListener("click", () => {
