@@ -1,0 +1,36 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // A signed-in Google account whose email sits in /allowlist.
+    function member() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && exists(/databases/$(database)/documents/allowlist/$(request.auth.token.email.lower()));
+    }
+
+    // The member list. Add and remove people from the Firebase console:
+    // Firestore → allowlist → Add document → Document ID = their email, lowercase.
+    // The document can be empty; only its existence matters.
+    match /allowlist/{email} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    // Everything the circle shares lives in one document, so a page load
+    // costs one read instead of one per book.
+    match /circle/public {
+      allow read: if member();
+      allow write: if member()
+        && request.resource.data.keys().hasOnly(['members', 'books', 'board'])
+        && request.resource.data.books.size() < 3000
+        && request.resource.data.board.size() <= 40;
+    }
+
+    // Private shelves. Only ever readable by their owner.
+    match /private/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+  }
+}
