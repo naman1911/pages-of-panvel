@@ -87,8 +87,26 @@ let state = { pub: EMPTY, priv: { books: [] }, user: null, busy: false };
 let filters = { genre: null, lang: null, lendable: false, mine: false };
 let tab = "shelf";
 
+// A transaction that never settles — the connection drops mid-write — used to
+// leave state.busy stuck true, because the reset sat after the try/catch instead
+// of in a finally. Every later write then returned silently at the busy guard:
+// adding a book, checking in and posting to the agenda all quietly stopped
+// working, with nothing on screen to say why. The finally and the timeout below
+// are what make that unwedgeable.
+const WRITE_TIMEOUT = 15000;
+
+function withTimeout(promise, ms = WRITE_TIMEOUT) {
+  let timer;
+  const bell = new Promise((_, reject) => {
+    timer = setTimeout(
+      () => reject(Object.assign(new Error("write timed out"), { code: "timeout" })), ms);
+  });
+  return Promise.race([promise, bell]).finally(() => clearTimeout(timer));
+}
+
 async function mutate(fn) {
-  if (state.busy) return;
+  // Never fail mute: a click that does nothing reads as a broken site.
+  if (state.busy) { showError("Still saving the last change. Give it a second."); return; }
   state.busy = true;
   hideError();
   if (DEMO) {
@@ -98,18 +116,26 @@ async function mutate(fn) {
     return;
   }
   try {
-    await fb.runTransaction(db, async (tx) => {
+    // The timeout only stops us waiting; if the write does land late, the
+    // snapshot listener picks it up like any other change.
+    await withTimeout(fb.runTransaction(db, async (tx) => {
       const snap = await tx.get(PUB);
       const cur = snap.exists() ? snap.data() : EMPTY;
       const next = fn(structuredClone({ ...EMPTY, ...cur }));
       tx.set(PUB, next);
-    });
+    }));
   } catch (e) {
-    showError(e?.code === "permission-denied"
-      ? "You're not on the member list for this circle. Ask whoever runs the group to add you."
-      : "That didn't save. Check your connection and give it another go.");
+    showError(
+      e?.code === "permission-denied"
+        ? "You're not on the member list for this circle. Ask whoever runs the group to add you."
+        : e?.code === "timeout"
+          ? "That took too long to save. Check your connection and try again."
+          // The code is worth showing: it is the difference between a dead
+          // network and a rule saying no.
+          : `That didn't save${e?.code ? ` (${e.code})` : ""}. Check your connection and give it another go.`);
+  } finally {
+    state.busy = false;   // always, however the write ended
   }
-  state.busy = false;
 }
 
 async function mutatePrivate(fn) {
@@ -132,10 +158,16 @@ $("signin").addEventListener("click", async () => {
   try {
     await fb.signInWithPopup(auth, new fb.GoogleAuthProvider());
   } catch (e) {
-    if (e?.code !== "auth/popup-closed-by-user") {
-      $("gate-msg").textContent = "Sign-in didn't go through. Try again?";
-      $("gate-msg").hidden = false;
-    }
+    if (e?.code === "auth/popup-closed-by-user") return;
+    // The two that actually happen say what to go and fix, because
+    // "try again" sends you round the same loop forever.
+    $("gate-msg").textContent =
+      e?.code === "auth/unauthorized-domain"
+        ? "This address isn't on the Firebase authorised-domains list yet."
+        : e?.code === "auth/operation-not-supported-in-this-environment"
+          ? "Sign-in needs a secure connection. Open the site over https."
+          : `Sign-in didn't go through${e?.code ? ` (${e.code})` : ""}. Try again?`;
+    $("gate-msg").hidden = false;
   }
 });
 $("signout").addEventListener("click", () => {
@@ -464,7 +496,10 @@ function renderSunday() {
       <div class="chip" style="background:${inkFor(p.id)}"></div>
       <div class="body">
         <div>${esc(p.text)}</div>
-        <div class="meta">${esc(readerName(p.uid))}</div>
+        <div class="meta">${esc(readerName(p.uid))}${p.uid === state.user.uid ? " (you)" : ""}</div>
+        ${p.uid === state.user.uid ? `<div class="acts">
+          <button class="btn ghost" data-act="unpin" data-id="${esc(p.id)}">Delete</button>
+        </div>` : ""}
       </div>
     </div>`).join("") : `<p class="quiet">Nothing down yet. Someone has to go first.</p>`;
 
@@ -477,38 +512,6 @@ function renderSunday() {
         <div class="meta">${b.author ? esc(b.author) + " — " : ""}from ${esc(readerName(b.uid))}</div>
       </div>
     </div>`).join("") : `<p class="quiet">None offered yet. Mark one of yours if you're happy to pass it on.</p>`;
-}
-
-/* ---------- round-up for WhatsApp ---------- */
-
-function roundUp() {
-  const L = [];
-  L.push(`*${CIRCLE.name}* — ${nextSunday()}, ${CIRCLE.when} in ${CIRCLE.where}`);
-  const reading = state.pub.books.filter((b) => b.status === "reading").length;
-  L.push(`${reading} books open across ${Object.keys(state.pub.members).length} of us.`);
-
-  const board = (state.pub.board || []).slice(0, 6);
-  if (board.length) {
-    L.push("", "*On the agenda*");
-    board.forEach((p) => L.push(`• ${p.text} — ${readerName(p.uid)}`));
-  }
-
-  const lend = state.pub.books.filter((b) => b.lendable).slice(0, 8);
-  if (lend.length) {
-    L.push("", "*Books going spare*");
-    lend.forEach((b) => L.push(`• ${b.title}${b.author ? ", " + b.author : ""} — ask ${readerName(b.uid)}`));
-  }
-
-  const streaks = Object.entries(state.pub.members)
-    .map(([id, m]) => ({ name: m.name, s: streakOf(m.days) }))
-    .filter((x) => x.s >= 3).sort((a, b) => b.s - a.s).slice(0, 5);
-  if (streaks.length) {
-    L.push("", "*On a roll*");
-    L.push(streaks.map((x) => `${x.name} (${x.s}d)`).join(", "));
-  }
-
-  L.push("", location.origin + location.pathname);
-  return L.join("\n");
 }
 
 /* ---------- events ---------- */
@@ -542,7 +545,7 @@ $("add-toggle").addEventListener("click", () => {
 
 $("add-save").addEventListener("click", async () => {
   const title = $("f-title").value.trim();
-  if (!title) return;
+  if (!title) { showError("Give the book a title first."); $("f-title").focus(); return; }
   const book = {
     id: uid(), uid: state.user.uid, title,
     author: $("f-author").value.trim(), genre: $("f-genre").value,
@@ -608,26 +611,28 @@ $("checkin").addEventListener("click", async () => {
   party(next >= 7 ? `${next} days straight!` : CHEERS[hash(todayISO()) % CHEERS.length]);
 });
 
+$("board").addEventListener("click", async (e) => {
+  const btn = e.target.closest('button[data-act="unpin"]');
+  if (!btn) return;
+  const { id } = btn.dataset;
+  const post = (state.pub.board || []).find((x) => x.id === id);
+  if (!post || post.uid !== state.user.uid) return;
+  if (!confirm("Take this off the agenda?")) return;
+  await mutate((c) => {
+    c.board = (c.board || []).filter((x) => x.id !== id || x.uid !== state.user.uid);
+    return c;
+  });
+});
+
 $("board-post").addEventListener("click", async () => {
   const text = $("board-text").value.trim();
-  if (!text) return;
+  if (!text) { showError("Write something first."); $("board-text").focus(); return; }
   await mutate((c) => {
     c.board = [{ id: uid(), uid: state.user.uid, text, at: todayISO() },
       ...(c.board || [])].slice(0, BOARD_CAP);
     return c;
   });
   $("board-text").value = "";
-});
-
-$("wa-share").addEventListener("click", () => {
-  window.open("https://wa.me/?text=" + encodeURIComponent(roundUp()), "_blank", "noopener");
-});
-$("wa-copy").addEventListener("click", async () => {
-  const text = roundUp();
-  $("wa-preview").textContent = text;
-  $("wa-preview").hidden = false;
-  try { await navigator.clipboard.writeText(text); party("Copied. Paste it in the group."); }
-  catch { party("Select the text below and copy it."); }
 });
 
 /* ---------- bits and pieces ---------- */

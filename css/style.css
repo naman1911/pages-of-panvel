@@ -356,14 +356,6 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--lime);outline-of
 /* ── sunday ───────────────────────────────────────────────── */
 .post-row{display:grid;gap:10px;margin-top:14px}
 .board{margin-top:14px}
-.wa-btns{display:flex;flex-wrap:wrap;gap:9px;margin-top:14px}
-.wa-btns .big-btn{width:auto;flex:1 1 200px}
-.wa-preview{
-  margin:14px 0 0;padding:14px;background:var(--ink-3);color:var(--lime);
-  border-left:3px solid var(--lime);
-  font-family:var(--mono);font-size:12px;line-height:1.75;
-  white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;
-}
 
 /* ── tabs ─────────────────────────────────────────────────── */
 .tabs{

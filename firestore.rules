@@ -14,8 +14,14 @@ service cloud.firestore {
     // Firestore → allowlist → Add document → Document ID = their email, lowercase.
     // The document can be empty; only its existence matters.
     match /allowlist/{email} {
-      allow read: if request.auth != null;
-      allow write: if false;
+      // Closed to the browser entirely. The app never reads this collection,
+      // and member() above resolves it with exists(), which is a privileged
+      // server-side lookup and is not subject to these rules.
+      //
+      // While read was open to any signed-in account, anyone on earth with a
+      // Google login — member or not, since signing in is not itself gated —
+      // could list the collection and walk off with every member's email.
+      allow read, write: if false;
     }
 
     // Everything the circle shares lives in one document, so a page load

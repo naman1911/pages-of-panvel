@@ -13,7 +13,7 @@ export const firebaseConfig = {
   appId: "1:212923062247:web:a4f7a113c5f50c08bd8f42",
 };
 
-// Where and when you meet. Shows up in the header and the WhatsApp round-up.
+// Where and when you meet. Shows up in the header.
 export const CIRCLE = {
   name: "Pages of Panvel",
   where: "the park",
