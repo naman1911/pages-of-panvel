@@ -9,7 +9,9 @@ const DEMO = new URLSearchParams(location.search).has("demo");
 const GENRES = ["Fiction", "Poetry", "History", "Memoir", "Crime", "Sci-fi & fantasy",
   "Philosophy", "Science", "Essays", "Graphic novel", "Children's", "Other"];
 const LANGS = ["English", "मराठी", "हिंदी", "Other"];
-const INKS = ["#8C3A2B", "#2E4738", "#3A5573", "#8A6A22", "#6B4A6E", "#A05A3C", "#4A5C3A"];
+// Spine colours. Bright on purpose — they sit on a dark page and carry
+// near-black text, so every one of these has to stay light.
+const INKS = ["#CBFF41", "#FF6A2B", "#49E8FF", "#B69CFF", "#FF4D9D", "#FFD23F", "#5CE68A"];
 const CHEERS = ["Another day on the books.", "The streak lives.", "Panvel reads on.",
   "Look at you go.", "That's a page more than yesterday.", "Sunday will be proud."];
 const DAY_CAP = 60;      // how many check-in dates we keep per member

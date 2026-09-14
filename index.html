@@ -1,146 +1,197 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Pages of Panvel — a reading circle</title>
-<meta name="description" content="A reading circle in Panvel. Sundays in the park, 8am.">
+<meta name="description" content="A reading circle in Panvel. Sundays, 8am, in the park.">
+<meta name="theme-color" content="#0C0A14">
 <meta property="og:title" content="Pages of Panvel">
 <meta property="og:description" content="A reading circle. Sundays in the park, 8am.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230C0A14'/%3E%3Crect x='5' y='7' width='5' height='18' fill='%23CBFF41'/%3E%3Crect x='12' y='4' width='5' height='21' fill='%23FF6A2B'/%3E%3Crect x='19' y='10' width='5' height='15' fill='%2349E8FF'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Anek+Devanagari:wght@300..800&family=Mukta:wght@400;600&family=Martian+Mono:wght@400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
-<div class="wrap">
+<div class="grain" aria-hidden="true"></div>
+<div class="aura" aria-hidden="true"><i></i><i></i><i></i></div>
 
-  <header>
-    <h1>Pages of<span class="p2">Panvel</span></h1>
-    <p class="tagline" id="tagline">A reading circle. Sundays in the park, 8am.</p>
+<!-- ─── boot ──────────────────────────────────────────── -->
+<div id="boot">
+  <div class="boot-mark">पanvel</div>
+  <div class="boot-bar"><i></i></div>
+  <p class="quiet">Unlocking the shelf…</p>
+</div>
+
+<!-- ─── gate / sign-in ────────────────────────────────── -->
+<section id="gate" hidden>
+  <div class="gate-inner">
+    <p class="kicker">Sundays · 8am · the park</p>
+
+    <h1 class="masthead">
+      <span class="m-1">PAGES</span>
+      <span class="m-2">OF</span>
+      <span class="m-3">PANVEL</span>
+      <span class="m-stamp">वाचक मंडळ</span>
+    </h1>
+
+    <div class="gate-foot">
+      <p class="gate-blurb">
+        ~100 of us. One park bench that was never going to be enough.
+        Log what you're reading, find your twin, keep the streak alive.
+      </p>
+
+      <button id="signin" class="big-btn">
+        <span class="g-dot" aria-hidden="true"></span>
+        Continue with Google
+      </button>
+
+      <p id="gate-msg" class="gate-msg" hidden></p>
+
+      <p class="gate-note">Members only. If it won't let you in, message whoever runs the group.</p>
+      <p class="gate-demo"><a href="?demo">or poke around the demo →</a></p>
+    </div>
+
+    <div class="gate-ticker" aria-hidden="true">
+      <div class="ticker-run">
+        <span>कोसला</span><span>✦</span><span>Pachinko</span><span>✦</span><span>गुनाहों का देवता</span><span>✦</span><span>Kafka on the Shore</span><span>✦</span><span>बटाट्याची चाळ</span><span>✦</span><span>Piranesi</span><span>✦</span>
+        <span>कोसला</span><span>✦</span><span>Pachinko</span><span>✦</span><span>गुनाहों का देवता</span><span>✦</span><span>Kafka on the Shore</span><span>✦</span><span>बटाट्याची चाळ</span><span>✦</span><span>Piranesi</span><span>✦</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── app ───────────────────────────────────────────── -->
+<main id="app" hidden>
+
+  <header class="top">
+    <div class="top-row">
+      <span class="wordmark" aria-label="Pages of Panvel">P<span>o</span>P</span>
+      <div class="top-right">
+        <span id="hero-badge" class="badge"></span>
+        <button id="signout" class="btn ghost tiny">Sign out</button>
+      </div>
+    </div>
+    <p class="hello" aria-hidden="true">नमस्कार</p>
+    <p id="who" class="whoami"></p>
+    <p id="tagline" class="tagline"></p>
   </header>
 
-  <!-- shown while firebase wakes up -->
-  <div id="boot" class="card"><p class="quiet">Unlocking the shelf…</p></div>
+  <p id="error" class="error" hidden></p>
 
-  <!-- signed out -->
-  <section id="gate" class="card pink" hidden>
-    <h2>Sign in to join the circle</h2>
-    <p class="quiet">Use the Google account you gave us when you joined. Members only — if it doesn't let you in, message whoever runs the group.</p>
-    <button id="signin" class="btn">Continue with Google</button>
-    <p class="quiet" id="gate-msg" hidden></p>
-    <p class="quiet">Not a member yet, or just curious? <a href="?demo">Have a look around a sample circle.</a></p>
-  </section>
+  <!-- ── the shelf ── -->
+  <section id="panel-shelf" class="panel">
 
-  <!-- signed in -->
-  <main id="app" hidden>
+    <div class="shelf-head">
+      <h2 class="h-big">THE<br>SHELF</h2>
+      <p class="shelf-sub"><b id="open-count">0</b> books standing open right now. Tap a spine.</p>
+    </div>
 
-    <section class="card blue" id="hero">
-      <div class="hero-top">
-        <div>
-          <span class="big" id="open-count">0</span>
-          <span class="meta">open right now</span>
-        </div>
-        <span class="badge" id="hero-badge"></span>
-      </div>
-      <div class="shelfbox"><div class="shelf" id="shelf"></div></div>
-      <p class="quiet" id="shelf-empty" hidden>The shelf is empty. Whoever adds the first book gets to say they started it.</p>
-    </section>
+    <div class="shelf-wrap">
+      <div id="shelf" class="shelf"></div>
+      <div class="shelf-plank" aria-hidden="true"></div>
+    </div>
+    <p id="shelf-empty" class="quiet" hidden>The shelf is empty. Whoever adds the first book gets to say they started it.</p>
 
     <div id="twins"></div>
 
-    <nav class="tabs" id="tabs">
-      <button class="tab on" data-tab="shelf">The shelf</button>
-      <button class="tab" data-tab="mine">My books</button>
-      <button class="tab" data-tab="standings">Standings</button>
-      <button class="tab" data-tab="sunday">Sunday</button>
-    </nav>
+    <div class="wall-head">
+      <h3 class="h-mid">Everyone, everything</h3>
+      <button id="filter-toggle" class="btn ghost">Filter</button>
+    </div>
 
-    <p class="error" id="error" hidden></p>
+    <!-- app.js fills this with toggle buttons — leave it empty -->
+    <div id="filters" class="filters" hidden></div>
 
-    <section id="panel-shelf" class="panel">
-      <div class="card">
-        <div class="row-between">
-          <h2>What everyone's reading</h2>
-          <button class="btn ghost" id="filter-toggle">Filter</button>
-        </div>
-        <div id="filters" class="filters" hidden></div>
-        <div id="wall"></div>
+    <div id="wall" class="wall"></div>
+  </section>
+
+  <!-- ── my books ── -->
+  <section id="panel-mine" class="panel" hidden>
+    <h2 class="h-big">MY<br>BOOKS</h2>
+    <p class="shelf-sub">the pile of <b id="my-name">you</b></p>
+
+    <div class="streak-card">
+      <div class="streak-num"><b id="streak">0</b><span id="streak-unit">days running</span></div>
+      <div id="dots" class="dots"></div>
+      <button id="checkin" class="big-btn lime">I read today</button>
+    </div>
+
+    <div class="wall-head">
+      <h3 class="h-mid">On your pile</h3>
+      <button id="add-toggle" class="btn">Add a book</button>
+    </div>
+
+    <!-- deliberately not a <form>: app.js binds click, never preventDefault -->
+    <div id="add-form" class="add-form" hidden>
+      <label class="field"><span>title</span>
+        <input id="f-title" type="text" maxlength="120" placeholder="कोसला / Piranesi" autocomplete="off"></label>
+      <label class="field"><span>author</span>
+        <input id="f-author" type="text" maxlength="80" autocomplete="off"></label>
+      <div class="field-row">
+        <label class="field"><span>genre</span><select id="f-genre"></select></label>
+        <label class="field"><span>language</span><select id="f-lang"></select></label>
       </div>
-    </section>
+      <label class="check"><input id="f-private" type="checkbox"><span>keep this one to myself</span></label>
+      <p class="quiet">Private books stay off the shelf and out of the standings. Only you see them.</p>
+      <button id="add-save" class="big-btn lime" type="button">Put it on the shelf</button>
+    </div>
 
-    <section id="panel-mine" class="panel" hidden>
-      <div class="card green">
-        <div class="row-between">
-          <div>
-            <h2 id="my-name"></h2>
-            <span class="big" id="streak">0</span><span class="meta" id="streak-unit">days running</span>
-            <div class="dots" id="dots"></div>
-          </div>
-          <button class="btn go" id="checkin">I read today</button>
-        </div>
+    <div id="my-books" class="wall"></div>
+  </section>
+
+  <!-- ── standings ── -->
+  <section id="panel-standings" class="panel" hidden>
+    <h2 class="h-big">STAND<br>INGS</h2>
+    <p class="quiet">Nobody wins anything. Everybody looks anyway.</p>
+    <div id="standings" class="standings"></div>
+  </section>
+
+  <!-- ── sunday ── -->
+  <section id="panel-sunday" class="panel" hidden>
+    <h2 class="h-big">SUN<br>DAY</h2>
+    <p id="sunday-heading" class="shelf-sub"></p>
+
+    <div class="block">
+      <h3 class="h-mid">Agenda — add anything</h3>
+      <p class="quiet">A book you want to argue about, a passage to read out, something you can't stop recommending.</p>
+      <div class="post-row">
+        <textarea id="board-text" rows="2" maxlength="280" placeholder="I want to read 4 pages of बटाट्याची चाळ out loud"></textarea>
+        <button id="board-post" class="big-btn lime">Pin it</button>
       </div>
+      <div id="board" class="board wall"></div>
+    </div>
 
-      <div class="card">
-        <div class="row-between">
-          <h2>Your books</h2>
-          <button class="btn ghost" id="add-toggle">Add a book</button>
-        </div>
-        <div id="add-form" hidden>
-          <input class="field" id="f-title" placeholder="Title" maxlength="120">
-          <input class="field" id="f-author" placeholder="Author" maxlength="80">
-          <div class="row-gap">
-            <select class="field" id="f-genre"></select>
-            <select class="field" id="f-lang"></select>
-          </div>
-          <label class="check"><input type="checkbox" id="f-private"> Keep this one private</label>
-          <p class="quiet tight">Private books stay off the shelf and out of the standings. Only you see them.</p>
-          <button class="btn" id="add-save">Put it on the shelf</button>
-        </div>
-        <div id="my-books"></div>
+    <div class="block">
+      <h3 class="h-mid">Copies on offer</h3>
+      <p class="quiet">Books people will hand over at the park. Just ask them.</p>
+      <div id="lendable" class="wall"></div>
+    </div>
+
+    <div class="block">
+      <h3 class="h-mid">Round-up for the group</h3>
+      <p class="quiet">Agenda, books going spare, who's on a streak — ready to drop into WhatsApp.</p>
+      <div class="wa-btns">
+        <button id="wa-share" class="big-btn">Open in WhatsApp</button>
+        <button id="wa-copy" class="btn ghost">Copy the text</button>
       </div>
-    </section>
+      <pre id="wa-preview" class="wa-preview" hidden></pre>
+    </div>
+  </section>
 
-    <section id="panel-standings" class="panel" hidden>
-      <div class="grid2" id="standings"></div>
-    </section>
+  <nav id="tabs" class="tabs" aria-label="Sections">
+    <button class="tab on" data-tab="shelf"><b>Shelf</b></button>
+    <button class="tab" data-tab="mine"><b>Mine</b></button>
+    <button class="tab" data-tab="standings"><b>Ranks</b></button>
+    <button class="tab" data-tab="sunday"><b>Sunday</b></button>
+  </nav>
 
-    <section id="panel-sunday" class="panel" hidden>
-      <div class="card pink">
-        <h2 id="sunday-heading">Bringing it up on Sunday</h2>
-        <p class="quiet">A book you want to argue about, a passage to read out, something you can't stop recommending.</p>
-        <textarea class="field" id="board-text" rows="2" maxlength="280" placeholder="What do you want to talk about?"></textarea>
-        <button class="btn" id="board-post">Add it to the list</button>
-        <div id="board"></div>
-      </div>
+</main>
 
-      <div class="card blue">
-        <h2>Up for grabs</h2>
-        <p class="quiet">Copies people will hand over at the park. Just ask them.</p>
-        <div id="lendable"></div>
-      </div>
-
-      <div class="card yellow">
-        <h2>Send it to the group</h2>
-        <p class="quiet">Builds this week's round-up — agenda, books going spare, who's on a streak — ready to drop into WhatsApp.</p>
-        <div class="row-gap">
-          <button class="btn" id="wa-share">Open in WhatsApp</button>
-          <button class="btn ghost" id="wa-copy">Copy the text</button>
-        </div>
-        <pre id="wa-preview" class="preview" hidden></pre>
-      </div>
-    </section>
-
-    <footer>
-      <span class="meta" id="who"></span>
-      <button class="btn ghost" id="signout">Sign out</button>
-    </footer>
-
-  </main>
-</div>
-
-<div id="party" class="party" hidden><div class="msg" id="party-msg"></div></div>
+<div id="party" hidden><p id="party-msg"></p></div>
 
 <script type="module" src="js/app.js"></script>
 </body>
