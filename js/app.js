@@ -505,38 +505,6 @@ function renderSunday() {
     </div>`).join("") : `<p class="quiet">None offered yet. Mark one of yours if you're happy to pass it on.</p>`;
 }
 
-/* ---------- round-up for WhatsApp ---------- */
-
-function roundUp() {
-  const L = [];
-  L.push(`*${CIRCLE.name}* — ${nextSunday()}, ${CIRCLE.when} in ${CIRCLE.where}`);
-  const reading = state.pub.books.filter((b) => b.status === "reading").length;
-  L.push(`${reading} books open across ${Object.keys(state.pub.members).length} of us.`);
-
-  const board = (state.pub.board || []).slice(0, 6);
-  if (board.length) {
-    L.push("", "*On the agenda*");
-    board.forEach((p) => L.push(`• ${p.text} — ${readerName(p.uid)}`));
-  }
-
-  const lend = state.pub.books.filter((b) => b.lendable).slice(0, 8);
-  if (lend.length) {
-    L.push("", "*Books going spare*");
-    lend.forEach((b) => L.push(`• ${b.title}${b.author ? ", " + b.author : ""} — ask ${readerName(b.uid)}`));
-  }
-
-  const streaks = Object.entries(state.pub.members)
-    .map(([id, m]) => ({ name: m.name, s: streakOf(m.days) }))
-    .filter((x) => x.s >= 3).sort((a, b) => b.s - a.s).slice(0, 5);
-  if (streaks.length) {
-    L.push("", "*On a roll*");
-    L.push(streaks.map((x) => `${x.name} (${x.s}d)`).join(", "));
-  }
-
-  L.push("", location.origin + location.pathname);
-  return L.join("\n");
-}
-
 /* ---------- events ---------- */
 
 function switchTab(name) {
@@ -643,17 +611,6 @@ $("board-post").addEventListener("click", async () => {
     return c;
   });
   $("board-text").value = "";
-});
-
-$("wa-share").addEventListener("click", () => {
-  window.open("https://wa.me/?text=" + encodeURIComponent(roundUp()), "_blank", "noopener");
-});
-$("wa-copy").addEventListener("click", async () => {
-  const text = roundUp();
-  $("wa-preview").textContent = text;
-  $("wa-preview").hidden = false;
-  try { await navigator.clipboard.writeText(text); party("Copied. Paste it in the group."); }
-  catch { party("Select the text below and copy it."); }
 });
 
 /* ---------- bits and pieces ---------- */

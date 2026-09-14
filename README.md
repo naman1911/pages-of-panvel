@@ -26,7 +26,7 @@ project or move to the pay-as-you-go plan.
 Open `index.html?demo` in a browser — or just click the link on the sign-in
 screen. That runs the whole site on a sample circle of eight readers with no
 Firebase involved at all, so you can click around, add books, filter the shelf
-and generate a WhatsApp round-up without signing up for anything.
+and filter the shelf without signing up for anything.
 
 Nothing in demo mode is saved. Reload and it's back to the sample data.
 
@@ -145,7 +145,7 @@ them on the first pass:
     f-title  f-author  f-genre  f-lang  f-private
     my-books  standings
     sunday-heading  board  board-text  board-post  lendable
-    wa-share  wa-copy  wa-preview  party  party-msg
+    party  party-msg
     panel-shelf  panel-mine  panel-standings  panel-sunday
 
 **Class names `app.js` writes, which the CSS styles:** `entry` `chip` `body`
@@ -183,7 +183,7 @@ second and a half.
 ## Changing the details
 
 `js/config.js` holds the circle's name, where you meet and when. Those feed the
-header and the WhatsApp round-up.
+header.
 
 ## If something breaks
 
