@@ -33,8 +33,8 @@ Nothing in demo mode is saved. Reload and it's back to the sample data.
 Useful for showing people what they're being asked to join. The sample lives in
 `js/demo-data.js` if you want to change the names.
 
-Note that opening plain `index.html` with no config filled in looks almost
-empty — the page is just a shell, and everything on it is drawn after Firebase
+Note that opening plain `index.html` with no config filled in sits on the boot
+screen — the page is just a shell, and everything on it is drawn after Firebase
 answers. That's expected, not a broken file.
 
 ---
@@ -122,6 +122,63 @@ rough estimate you'd need several thousand books before size became a question.
 
 Writes go through a Firestore transaction, so two people adding a book at the
 same moment won't overwrite each other.
+
+## The look, and what not to break
+
+Dark, loud, mobile-first. Three typefaces, all of which carry Devanagari, so
+English, Marathi and Hindi titles sit on the same line without falling back:
+Anek Devanagari (display), Mukta (body), Martian Mono (small caps labels).
+
+`index.html` and `css/style.css` are yours to rewrite. `js/app.js` is not —
+it finds elements by ID and writes its own HTML, so a redesign has to keep the
+contract below or the site breaks quietly, with no error.
+
+**IDs that must exist in `index.html`** — you can wrap, nest and reorder them,
+but they have to be there when the page loads, because `app.js` binds to all of
+them on the first pass:
+
+    boot  gate  gate-msg  signin  signout  app  who  tagline
+    open-count  hero-badge  shelf  shelf-empty  twins
+    tabs  error  filters  filter-toggle  wall
+    my-name  streak  streak-unit  dots  checkin
+    add-toggle  add-form  add-save
+    f-title  f-author  f-genre  f-lang  f-private
+    my-books  standings
+    sunday-heading  board  board-text  board-post  lendable
+    wa-share  wa-copy  wa-preview  party  party-msg
+    panel-shelf  panel-mine  panel-standings  panel-sunday
+
+**Class names `app.js` writes, which the CSS styles:** `entry` `chip` `body`
+`title` `meta` `line` `tag` (+ variants `g p b y k`) `acts` `editor` `twin`
+`rank` (+ `you`) `medal` `nm` `v` `btn` (+ `ghost`) `spine` (+ `thin` `match`)
+`dot` (+ `on` `today`) `quiet` `field`, and `card` with `green|blue|pink|yellow`
+for the four leaderboards.
+
+Tab buttons need `class="tab"` and `data-tab="shelf|mine|standings|sunday"`.
+`app.js` toggles the class `on` to mark the active one.
+
+Four things that have bitten this project, and the rules that stop them:
+
+1. **`[hidden]{display:none !important}` stays in the CSS.** `app.js` shows and
+   hides with `el.hidden`, and any author `display` rule silently beats the
+   `hidden` attribute. Without this the panels, filters, add form and the party
+   toast are all permanently visible. This shipped as a bug once.
+2. **`f-genre` and `f-lang` must be `<select>`.** `app.js` fills them with
+   `.add(new Option(…))` at load. An `<input>` there throws before anything
+   renders and the whole page stays on the boot screen.
+3. **`add-form` must not be a `<form>`, and `add-save` must be
+   `type="button"`.** `app.js` binds click and never calls `preventDefault`, so
+   a real form reloads the page and loses the book.
+4. **No `localStorage` or `sessionStorage`,** anywhere.
+
+Inline styles `app.js` sets, which the CSS must not fight: `.spine` gets
+`background` and `height`, `.chip` and `.medal` get `background`. The spine
+palette is the `INKS` array at the top of `app.js` — seven colours, all light,
+because the titles on them are near-black.
+
+`--yellow` in the CSS is the colour `app.js` flashes an entry with when you tap
+a spine. On a dark page it has to stay translucent or the text disappears for a
+second and a half.
 
 ## Changing the details
 
