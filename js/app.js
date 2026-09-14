@@ -490,7 +490,10 @@ function renderSunday() {
       <div class="chip" style="background:${inkFor(p.id)}"></div>
       <div class="body">
         <div>${esc(p.text)}</div>
-        <div class="meta">${esc(readerName(p.uid))}</div>
+        <div class="meta">${esc(readerName(p.uid))}${p.uid === state.user.uid ? " (you)" : ""}</div>
+        ${p.uid === state.user.uid ? `<div class="acts">
+          <button class="btn ghost" data-act="unpin" data-id="${esc(p.id)}">Delete</button>
+        </div>` : ""}
       </div>
     </div>`).join("") : `<p class="quiet">Nothing down yet. Someone has to go first.</p>`;
 
@@ -600,6 +603,19 @@ $("checkin").addEventListener("click", async () => {
     return c;
   });
   party(next >= 7 ? `${next} days straight!` : CHEERS[hash(todayISO()) % CHEERS.length]);
+});
+
+$("board").addEventListener("click", async (e) => {
+  const btn = e.target.closest('button[data-act="unpin"]');
+  if (!btn) return;
+  const { id } = btn.dataset;
+  const post = (state.pub.board || []).find((x) => x.id === id);
+  if (!post || post.uid !== state.user.uid) return;
+  if (!confirm("Take this off the agenda?")) return;
+  await mutate((c) => {
+    c.board = (c.board || []).filter((x) => x.id !== id || x.uid !== state.user.uid);
+    return c;
+  });
 });
 
 $("board-post").addEventListener("click", async () => {
