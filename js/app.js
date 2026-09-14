@@ -12,6 +12,7 @@ const LANGS = ["English", "मराठी", "हिंदी", "Other"];
 // Spine colours. Bright on purpose — they sit on a dark page and carry
 // near-black text, so every one of these has to stay light.
 const INKS = ["#CBFF41", "#FF6A2B", "#49E8FF", "#B69CFF", "#FF4D9D", "#FFD23F", "#5CE68A"];
+const OFFLINE = "Can't reach the shelf right now. It'll reconnect on its own.";
 const CHEERS = ["Another day on the books.", "The streak lives.", "Panvel reads on.",
   "Look at you go.", "That's a page more than yesterday.", "Sunday will be proud."];
 const DAY_CAP = 60;      // how many check-in dates we keep per member
@@ -20,6 +21,9 @@ const BOARD_CAP = 40;    // how many agenda items we keep
 /* ---------- helpers ---------- */
 
 const $ = (id) => document.getElementById(id);
+// Counts of one are common here, and "1 books" reads like a bug.
+const ODD = { days: "day", shelves: "shelf", books: "book", readers: "reader" };
+const plural = (n, word) => (n === 1 ? ODD[word] || word.replace(/s$/, "") : word);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g,
   (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const todayISO = () => new Date().toISOString().slice(0, 10);
@@ -159,11 +163,14 @@ else fb.onAuthStateChanged(auth, async (user) => {
 
   fb.onSnapshot(PUB,
     (snap) => {
+      // A snapshot means the stream is alive, so drop a stale offline banner.
+      // Only that one — a write failure has to stay up until the write retries.
+      if ($("error").textContent === OFFLINE) hideError();
       state.pub = { ...EMPTY, ...(snap.exists() ? snap.data() : EMPTY) };
       ensureMember();
       renderAll();
     },
-    () => showError("Can't reach the shelf right now. It'll reconnect on its own.")
+    () => showError(OFFLINE)
   );
 });
 
@@ -241,7 +248,8 @@ function renderHero() {
   const people = Object.keys(state.pub.members).length;
   const finished = state.pub.books.filter((b) => b.status === "finished").length;
   $("open-count").textContent = reading.length;
-  $("hero-badge").textContent = `${people} readers · ${finished} finished`;
+  $("hero-badge").textContent =
+    `${people} ${plural(people, "readers")} · ${finished} finished`;
 
   const twinTitles = new Set(myTwins().map((t) => norm(t.book.title)));
   const shelf = $("shelf");
@@ -420,7 +428,7 @@ function renderStandings() {
       <div class="rank${r.id === state.user.uid ? " you" : ""}">
         <span class="medal" style="background:${INKS[i % INKS.length]}">${i + 1}</span>
         <span class="nm">${esc(r.name)}</span>
-        <span class="v">${r[b.k]} ${b.unit}</span>
+        <span class="v">${r[b.k]} ${plural(r[b.k], b.unit)}</span>
       </div>`).join("");
 
     if (!ranked.length) rows = `<p class="quiet">Wide open. Someone could take this one easily.</p>`;
@@ -433,9 +441,9 @@ function renderStandings() {
       <div class="rank you">
         <span class="medal" style="background:var(--ink)">${myIdx + 1}</span>
         <span class="nm">You</span>
-        <span class="v">${me[b.k]} ${b.unit}</span>
+        <span class="v">${me[b.k]} ${plural(me[b.k], b.unit)}</span>
       </div>
-      ${above ? `<p class="quiet">${gap === 0 ? "Level with" : gap + " " + b.unit + " off"} ${esc(above.name)} in ${myIdx}${ordinal(myIdx)}.</p>` : ""}`;
+      ${above ? `<p class="quiet">${gap === 0 ? "Level with" : gap + " " + plural(gap, b.unit) + " off"} ${esc(above.name)} in ${myIdx}${ordinal(myIdx)}.</p>` : ""}`;
     }
 
     return `<div class="card ${b.color}">
