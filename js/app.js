@@ -9,7 +9,7 @@ const DEMO = new URLSearchParams(location.search).has("demo");
 const GENRES = ["Fiction", "Poetry", "History", "Memoir", "Crime", "Sci-fi & fantasy",
   "Philosophy", "Science", "Essays", "Graphic novel", "Children's", "Other"];
 const LANGS = ["English", "मराठी", "हिंदी", "Other"];
-const INKS = ["#FF4E9B", "#0F7FD4", "#00A25C", "#FFC700", "#FF6B2C", "#7B5BC4"];
+const INKS = ["#8C3A2B", "#2E4738", "#3A5573", "#8A6A22", "#6B4A6E", "#A05A3C", "#4A5C3A"];
 const CHEERS = ["Another day on the books.", "The streak lives.", "Panvel reads on.",
   "Look at you go.", "That's a page more than yesterday.", "Sunday will be proud."];
 const DAY_CAP = 60;      // how many check-in dates we keep per member
@@ -629,18 +629,7 @@ let partyTimer;
 function party(msg) {
   const box = $("party");
   $("party-msg").textContent = msg;
-  box.querySelectorAll(".bit").forEach((b) => b.remove());
-  if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    for (let i = 0; i < 26; i++) {
-      const s = document.createElement("span");
-      s.className = "bit";
-      s.style.left = ((i * 37 + hash(msg + i) % 30) % 100) + "%";
-      s.style.background = INKS[i % INKS.length];
-      s.style.animationDelay = ((hash(msg + "d" + i) % 900) / 1000) + "s";
-      box.appendChild(s);
-    }
-  }
   box.hidden = false;
   clearTimeout(partyTimer);
-  partyTimer = setTimeout(() => { box.hidden = true; }, 2600);
+  partyTimer = setTimeout(() => { box.hidden = true; }, 2400);
 }
