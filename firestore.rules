@@ -3,40 +3,50 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // A signed-in Google account whose email sits in /allowlist.
-    function member() {
+    // Anyone signed in with a verified Google account. The circle is open:
+    // there is no allowlist to be on any more, you just sign in.
+    function signedIn() {
       return request.auth != null
-        && request.auth.token.email_verified == true
-        && exists(/databases/$(database)/documents/allowlist/$(request.auth.token.email.lower()));
+        && request.auth.token.email_verified == true;
     }
 
-    // The member list. Add and remove people from the Firebase console:
-    // Firestore → allowlist → Add document → Document ID = their email, lowercase.
-    // The document can be empty; only its existence matters.
-    match /allowlist/{email} {
-      // Closed to the browser entirely. The app never reads this collection,
-      // and member() above resolves it with exists(), which is a privileged
-      // server-side lookup and is not subject to these rules.
-      //
-      // While read was open to any signed-in account, anyone on earth with a
-      // Google login — member or not, since signing in is not itself gated —
-      // could list the collection and walk off with every member's email.
-      allow read, write: if false;
+    // The whole circle lives in one document and every write replaces all of
+    // it, so a single bad request could empty the shelf. Now that anyone can
+    // write, these bound the damage: normal use only ever removes one book or
+    // one agenda item at a time, and never removes a member.
+    function notClearingOut() {
+      return request.resource.data.books.size() >= resource.data.books.size() - 1
+        && request.resource.data.board.size() >= resource.data.board.size() - 1
+        && request.resource.data.members.size() >= resource.data.members.size();
+    }
+
+    function wellFormed() {
+      return request.resource.data.keys().hasOnly(['members', 'books', 'board'])
+        && request.resource.data.books.size() < 3000
+        && request.resource.data.board.size() <= 40;
     }
 
     // Everything the circle shares lives in one document, so a page load
     // costs one read instead of one per book.
     match /circle/public {
-      allow read: if member();
-      allow write: if member()
-        && request.resource.data.keys().hasOnly(['members', 'books', 'board'])
-        && request.resource.data.books.size() < 3000
-        && request.resource.data.board.size() <= 40;
+      allow read: if signedIn();
+
+      // Split because resource.data does not exist yet on a create.
+      allow create: if signedIn() && wellFormed();
+      allow update: if signedIn() && wellFormed() && notClearingOut();
+      allow delete: if false;
     }
 
     // Private shelves. Only ever readable by their owner.
     match /private/{uid} {
       allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // No longer the gate — signedIn() above does not consult it. Kept closed
+    // so the documents already in it stay private, and so the collection is
+    // still here if the circle is ever closed again.
+    match /allowlist/{email} {
+      allow read, write: if false;
     }
   }
 }

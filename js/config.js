@@ -1,8 +1,7 @@
 // Firebase settings for the Pages of Panvel circle.
 //
 // These values are meant to be public. They identify the project, they don't
-// grant access to it. What protects the data is firestore.rules plus the
-// allowlist collection.
+// grant access to it. What protects the data is firestore.rules.
 
 export const firebaseConfig = {
   apiKey: "AIzaSyDAPimL4D4vUIZ0UqZUdegTlEeAYp7jbmg",
