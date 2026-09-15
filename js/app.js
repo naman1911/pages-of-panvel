@@ -37,7 +37,7 @@ function hash(s) {
   return Math.abs(h);
 }
 const inkFor = (s) => INKS[hash(s) % INKS.length];
-const heightFor = (s) => 96 + (hash(s + "h") % 58);
+const heightFor = (s) => 124 + (hash(s + "h") % 72);
 
 function streakOf(days = []) {
   if (!days.length) return 0;
