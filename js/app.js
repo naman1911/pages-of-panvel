@@ -13,7 +13,7 @@ const LANGS = ["English", "मराठी", "हिंदी", "Other"];
 // near-black text, so every one of these has to stay light.
 const INKS = ["#CBFF41", "#FF6A2B", "#49E8FF", "#B69CFF", "#FF4D9D", "#FFD23F", "#5CE68A"];
 const OFFLINE = "Can't reach the shelf right now. It'll reconnect on its own.";
-const NOT_MEMBER = "You're not on the member list for this circle. Ask whoever runs the group to add you.";
+const DENIED = "Firestore turned that down. Sign out and back in with a Google account — that's all it takes to join.";
 const CHEERS = ["Another day on the books.", "The streak lives.", "Panvel reads on.",
   "Look at you go.", "That's a page more than yesterday.", "Sunday will be proud."];
 const DAY_CAP = 60;      // how many check-in dates we keep per member
@@ -128,7 +128,7 @@ async function mutate(fn) {
   } catch (e) {
     showError(
       e?.code === "permission-denied"
-        ? NOT_MEMBER
+        ? DENIED
         : e?.code === "timeout"
           ? "That took too long to save. Check your connection and try again."
           // The code is worth showing: it is the difference between a dead
@@ -199,15 +199,15 @@ else fb.onAuthStateChanged(auth, async (user) => {
       // A snapshot means the stream is alive, so drop a stale offline banner.
       // Only that one — a write failure has to stay up until the write retries.
       const shown = $("error").textContent;
-      if (shown === OFFLINE || shown === NOT_MEMBER) hideError();
+      if (shown === OFFLINE || shown === DENIED) hideError();
       state.pub = { ...EMPTY, ...(snap.exists() ? snap.data() : EMPTY) };
       ensureMember();
       renderAll();
     },
     // A denied read is not a network blip and will never "reconnect on its
-    // own" — it means this account is not on the allowlist. Saying otherwise
-    // sends someone off to check their wifi over a permissions problem.
-    (e) => showError(e?.code === "permission-denied" ? NOT_MEMBER : OFFLINE)
+    // own" — it is an auth problem. Saying otherwise sends someone off to
+    // check their wifi over something a re-sign-in fixes.
+    (e) => showError(e?.code === "permission-denied" ? DENIED : OFFLINE)
   );
 });
 

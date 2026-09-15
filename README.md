@@ -59,15 +59,16 @@ Firestore Database → Create database → production mode. Pick the
 
 Firestore → Rules tab. Paste the contents of `firestore.rules`. Publish.
 
-**5. Add your members**
+**5. Nothing to do — the circle is open**
 
-Firestore → Data → Start collection → collection ID `allowlist`.
+Anyone who signs in with a verified Google account is in. There is no member
+list to maintain.
 
-For each member, add a document whose ID is their Gmail address in lowercase.
-The document can be completely empty; only its existence matters. Add a field
-like `name` if you want it readable at a glance.
-
-Nobody outside this list can read anything, even with the link.
+That means anyone with the link and a Google account can read the circle and
+post to it. The rules bound what a single write can destroy — one book or one
+agenda item at a time, and members are never removed — but they do not stop
+someone from being a nuisance. If the circle ever needs closing again, the
+`allowlist` collection and the rule that checked it are in this repo's history.
 
 **6. Register the web app and copy the config**
 
@@ -93,13 +94,10 @@ Firebase Hosting works too if you'd rather (`firebase init hosting`, then
 
 ---
 
-## Adding and removing members
+## Removing someone
 
-One document in `allowlist`, named after their email in lowercase. Removing the
-document cuts off access immediately.
-
-Their books stay on the shelf after removal. To clear those out, edit the
-`books` array in `circle/public` directly in the console.
+There is no member list to remove anyone from. To take their books off the
+shelf, edit the `books` array in `circle/public` in the Firebase console.
 
 ---
 
@@ -114,7 +112,6 @@ Their books stay on the shelf after removal. To clear those out, edit the
     private/{uid}        one per member, readable only by them
       books              same shape, never shown to anyone else
 
-    allowlist/{email}    existence = permission
 
 Check-in dates are capped at the last 60 per member and the agenda at 40 items,
 so the shared document stays comfortably under Firestore's 1MB limit. At a
@@ -189,9 +186,6 @@ header.
 
 **Sign-in popup opens then closes with nothing happening** — the domain isn't
 in Authentication → Settings → Authorized domains.
-
-**"You're not on the member list"** — that Gmail address isn't in `allowlist`,
-or it's there with a capital letter. Document IDs must be lowercase.
 
 **Shelf stays empty after adding a book** — check the browser console. Usually
 the rules haven't been published yet.
