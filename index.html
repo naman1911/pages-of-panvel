@@ -11,6 +11,39 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230C0A14'/%3E%3Crect x='5' y='7' width='5' height='18' fill='%23CBFF41'/%3E%3Crect x='12' y='4' width='5' height='21' fill='%23FF6A2B'/%3E%3Crect x='19' y='10' width='5' height='15' fill='%2349E8FF'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<!-- The Firebase SDK, the token refresh and the data all live on hosts the
+     page has not talked to yet, and it only reaches them part-way through
+     app.js. Warming the connections here means the DNS lookup, TCP handshake
+     and TLS negotiation are already done by the time they are needed.
+     Hints only: if a host is wrong or unreachable the browser ignores it. -->
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://securetoken.googleapis.com" crossorigin>
+
+<script>
+  /* Start fetching the Firebase SDK now, in parallel with app.js and
+     config.js, instead of after both have arrived.
+
+     Skipped under ?demo, which never loads Firebase at all — a static
+     <link rel="modulepreload"> would download the whole SDK there for
+     nothing, which is most of the demo's weight.
+
+     KEEP THIS VERSION IN STEP WITH const V IN js/app.js. If they drift, the
+     page still works — the preload simply misses and the SDK is fetched
+     twice, wasting bandwidth rather than breaking anything. */
+  (function () {
+    if (new URLSearchParams(location.search).has("demo")) return;
+    var V = "https://www.gstatic.com/firebasejs/10.12.2";
+    ["firebase-app", "firebase-auth", "firebase-firestore"].forEach(function (m) {
+      var l = document.createElement("link");
+      l.rel = "modulepreload";
+      l.href = V + "/" + m + ".js";
+      l.crossOrigin = "anonymous";
+      document.head.appendChild(l);
+    });
+  })();
+</script>
 <link href="https://fonts.googleapis.com/css2?family=Anek+Devanagari:wght@300..800&family=Mukta:wght@400;600&family=Martian+Mono:wght@400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 </head>
