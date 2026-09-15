@@ -170,7 +170,24 @@ button{font:inherit;color:inherit}
 .shelf-head{display:grid;gap:12px}
 .shelf-sub{font-size:15px;color:var(--dim);max-width:32ch}
 .shelf-sub b{color:var(--lime);font-family:var(--disp);font-size:22px;font-weight:800}
-.shelf-wrap{margin-top:16px}
+.shelf-wrap{margin-top:16px;position:relative}
+/* Fades the right edge while there is more shelf that way. Sits over the
+   spines only — the plank is the last 10px — and bleeds past the gutter so it
+   reaches the true screen edge, like the shelf itself does. */
+.shelf-wrap::after{
+  content:"";position:absolute;top:0;right:calc(-1 * var(--gut));
+  width:56px;height:calc(100% - 10px);
+  pointer-events:none;opacity:0;transition:opacity .25s ease;
+  background:linear-gradient(90deg,transparent,var(--ink));
+}
+.shelf-wrap.more::after{opacity:.92}
+.shelf-more{
+  margin-top:9px;text-align:right;
+  font-family:var(--mono);font-size:10px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--lime);
+  animation:nudge 1.9s ease-in-out infinite;
+}
+@keyframes nudge{0%,100%{transform:translateX(0)}50%{transform:translateX(5px)}}
 .shelf{
   display:flex;align-items:flex-end;gap:5px;min-height:220px;
   overflow-x:auto;overflow-y:hidden;padding:22px var(--gut) 0;margin:0 calc(-1 * var(--gut));
