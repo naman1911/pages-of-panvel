@@ -9,9 +9,13 @@ const DEMO = new URLSearchParams(location.search).has("demo");
 const GENRES = ["Fiction", "Poetry", "History", "Memoir", "Crime", "Sci-fi & fantasy",
   "Philosophy", "Science", "Essays", "Graphic novel", "Children's", "Other"];
 const LANGS = ["English", "मराठी", "हिंदी", "Other"];
-// Spine colours. Bright on purpose — they sit on a dark page and carry
-// near-black text, so every one of these has to stay light.
-const INKS = ["#CBFF41", "#FF6A2B", "#49E8FF", "#B69CFF", "#FF4D9D", "#FFD23F", "#5CE68A"];
+// Spine colours, ordered around the hue wheel. Bright on purpose — they sit
+// on a dark page and carry near-black text, so every one stays light enough
+// to clear 4.5:1 against it. Fourteen rather than seven, so a shelf of twenty
+// books stops looking like the same handful repeating.
+const INKS = ["#FF6A2B", "#FFAB76", "#FFD23F", "#CBFF41", "#A8F06B", "#5CE68A",
+  "#7DE2D1", "#49E8FF", "#9AD5FF", "#B69CFF", "#E0A6FF", "#FFC2E2",
+  "#FF4D9D", "#FF8FA3"];
 const OFFLINE = "Can't reach the shelf right now. It'll reconnect on its own.";
 const DENIED = "Firestore turned that down. Sign out and back in with a Google account — that's all it takes to join.";
 const CHEERS = ["Another day on the books.", "The streak lives.", "Panvel reads on.",
@@ -309,7 +313,22 @@ function renderHero() {
     }
   });
   $("shelf-empty").hidden = reading.length > 0;
+  shelfOverflow();
 }
+
+// The shelf scrolls sideways, which is easy to miss when the spines happen to
+// fill the width. Show the sign only while there is actually more that way,
+// and drop it once you reach the end.
+function shelfOverflow() {
+  const s = $("shelf");
+  const more = s.scrollWidth - s.clientWidth - s.scrollLeft > 8;
+  s.parentElement.classList.toggle("more", more);
+  $("shelf-more").hidden = !more;
+}
+$("shelf").addEventListener("scroll", shelfOverflow, { passive: true });
+addEventListener("resize", shelfOverflow);
+// Spine widths change when the real typeface lands, so measure again then.
+if (document.fonts?.ready) document.fonts.ready.then(shelfOverflow);
 
 function renderTwins() {
   const t = myTwins();
