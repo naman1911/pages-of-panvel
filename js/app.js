@@ -9,13 +9,16 @@ const DEMO = new URLSearchParams(location.search).has("demo");
 const GENRES = ["Fiction", "Poetry", "History", "Memoir", "Crime", "Sci-fi & fantasy",
   "Philosophy", "Science", "Essays", "Graphic novel", "Children's", "Other"];
 const LANGS = ["English", "मराठी", "हिंदी", "Other"];
-// Spine colours, ordered around the hue wheel. Bright on purpose — they sit
-// on a dark page and carry near-black text, so every one stays light enough
-// to clear 4.5:1 against it. Fourteen rather than seven, so a shelf of twenty
-// books stops looking like the same handful repeating.
-const INKS = ["#FF6A2B", "#FFAB76", "#FFD23F", "#CBFF41", "#A8F06B", "#5CE68A",
-  "#7DE2D1", "#49E8FF", "#9AD5FF", "#B69CFF", "#E0A6FF", "#FFC2E2",
-  "#FF4D9D", "#FF8FA3"];
+// Spine colours, ordered around the hue wheel. Muted and warm to sit on the
+// circle's cream page, and every one clears 4.5:1 against the charcoal
+// lettering printed on it while staying at least 1.5:1 against the page, so a
+// spine still reads as an object rather than fading into the paper.
+//
+// The brand's own red and green are NOT in here: charcoal text on them
+// measures 2.9:1 and 1.8:1, so a title set on either would be unreadable.
+// They carry cream text elsewhere instead.
+const INKS = ["#C77F71", "#C4906A", "#D89C24", "#A8B060", "#8FB891", "#7FAE96",
+  "#93B7B0", "#7FA8B8", "#9FA8C4", "#AC9BC9", "#B58FA8", "#BC8E9E"];
 const OFFLINE = "Can't reach the shelf right now. It'll reconnect on its own.";
 const DENIED = "Firestore turned that down. Sign out and back in with a Google account — that's all it takes to join.";
 const CHEERS = ["Another day on the books.", "The streak lives.", "Panvel reads on.",
