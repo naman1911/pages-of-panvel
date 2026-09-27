@@ -9,16 +9,22 @@ const DEMO = new URLSearchParams(location.search).has("demo");
 const GENRES = ["Fiction", "Poetry", "History", "Memoir", "Crime", "Sci-fi & fantasy",
   "Philosophy", "Science", "Essays", "Graphic novel", "Children's", "Other"];
 const LANGS = ["English", "मराठी", "हिंदी", "Other"];
-// Spine colours, ordered around the hue wheel. Muted and warm to sit on the
-// circle's cream page, and every one clears 4.5:1 against the charcoal
-// lettering printed on it while staying at least 1.5:1 against the page, so a
-// spine still reads as an object rather than fading into the paper.
+// Spine colours, ordered around the hue wheel. Loud on purpose — the shelf is
+// the first thing anyone sees, and a rack of bright spines on cream paper is
+// the whole point of it.
 //
-// The brand's own red and green are NOT in here: charcoal text on them
-// measures 2.9:1 and 1.8:1, so a title set on either would be unreadable.
-// They carry cream text elsewhere instead.
-const INKS = ["#C77F71", "#C4906A", "#D89C24", "#A8B060", "#8FB891", "#7FAE96",
-  "#93B7B0", "#7FA8B8", "#9FA8C4", "#AC9BC9", "#B58FA8", "#BC8E9E"];
+// Two things bound how loud they can get. The lettering printed on a spine is
+// charcoal at 88%, so the real text colour is a blend of charcoal and the
+// spine itself; every colour here clears 4.5:1 against that blend, not against
+// pure charcoal, which is the more forgiving number. And each sits at least
+// ΔE 22 from the cream page — perceptual distance, not luminance contrast,
+// because a golden spine reads clearly against cream on hue alone even though
+// the two are nearly equal in brightness.
+//
+// The brand's own red and green still cannot be spines: charcoal on them is
+// 2.9:1 and 1.8:1, unreadable. They carry cream text elsewhere instead.
+const INKS = ["#FF6B4A", "#FFA62B", "#FFE03D", "#D4E84A", "#9BE04F", "#4FD97E", "#3ED9B0",
+  "#35D2D2", "#4BC4F5", "#7FA8FF", "#A87FFF", "#D97FF5", "#FF6FB5", "#FF5C7A"];
 const OFFLINE = "Can't reach the shelf right now. It'll reconnect on its own.";
 const DENIED = "Firestore turned that down. Sign out and back in with a Google account — that's all it takes to join.";
 const CHEERS = ["Another day on the books.", "The streak lives.", "Panvel reads on.",
