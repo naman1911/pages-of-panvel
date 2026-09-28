@@ -10,7 +10,7 @@
    Private books never appear on a card. They're "only you see them" on the
    site, and a card is made to be posted.                                   */
 
-import { WAYS, CARDS } from './brag-cards.js';
+import { WAYS, CARDS, CIRCLE } from './brag-cards.js';
 import { renderCard, loadFonts } from './brag-render.js';
 
 const YEAR = String(new Date().getFullYear());
@@ -99,6 +99,59 @@ function plan(ctx) {
   } : { locked: `Add a book this year to unlock` };
 
   return out;
+}
+
+/* ---------- the circle's month, from everyone's shelves ---------- */
+
+// Dates in the data are UTC calendar days (app.js writes toISOString), so
+// months are worked out the same way.
+const monthKey = (back) => {
+  const d = new Date();
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() - back, 1)).toISOString().slice(0, 7);
+};
+const monthName = (m) => new Date(m + '-01T00:00:00Z').toLocaleString('en', { month: 'long', timeZone: 'UTC' });
+
+// This month and last, so the card can go up on the 1st for the month just gone.
+function planCircle(ctx) {
+  const { members, books, norm } = ctx;
+  const out = {}, deck = [];
+  [0, 1].forEach((back) => {
+    const M = monthKey(back), first = M + '-01', last = M + '-31';
+    const inMonth = (d) => String(d || '').startsWith(M);
+    // On the go that month: started by its end, and not finished before it began.
+    const active = books.filter((b) => String(b.startedAt || '') <= last &&
+      (b.status !== 'finished' || String(b.finishedAt || '') >= first));
+    const finished = books.filter((b) => b.status === 'finished' && inMonth(b.finishedAt));
+    const readers = new Set(active.map((b) => b.uid));
+    let streak = 0;
+    for (const [id, m] of Object.entries(members)) {
+      const days = (m.days || []).filter(inMonth);
+      if (days.length) readers.add(id);
+      streak = Math.max(streak, bestRun(days));
+    }
+    const byTitle = new Map();
+    for (const b of active) {
+      const k = norm(b.title);
+      if (!byTitle.has(k)) byTitle.set(k, { book: b, who: new Set() });
+      byTitle.get(k).who.add(b.uid);
+    }
+    let top = null;
+    for (const { book, who } of byTitle.values()) {
+      if (who.size >= 2 && (!top || who.size > top.n)) top = { title: book.title, author: book.author, lang: book.lang, n: who.size };
+    }
+    const id = 'circle-' + M, name = monthName(M);
+    deck.push({ ...CIRCLE, id, name, note: back ? 'last month' : 'this month' });
+    out[id] = active.length || readers.size ? {
+      choices: [null],
+      data: () => ({
+        month: name, year: M.slice(0, 4), finished: pad(finished.length), readers: pad(readers.size),
+        genres: pad(new Set(active.map((b) => b.genre).filter(Boolean)).size),
+        langs: pad(new Set(active.map((b) => b.lang).filter(Boolean)).size),
+        streak: pad(streak), top, onGo: active.length,
+      }),
+    } : { locked: `Nothing logged in ${name} yet` };
+  });
+  return { plans: out, deck };
 }
 
 /* ---------- fitting ---------- */
@@ -197,7 +250,7 @@ const CSS = `
 .brag-acts{display:flex;flex-wrap:wrap;justify-content:center;gap:10px}
 `;
 
-let ctx, plans, way = 'A', job = 0, pick = {}, thumbs = {}, full = null, fullUrl = null, current = null;
+let ctx, plans, deck = CARDS, way = 'A', job = 0, pick = {}, thumbs = {}, full = null, fullUrl = null, current = null;
 let els = null, lastFocus = null;
 
 const $ = (id) => document.getElementById(id);
@@ -221,13 +274,13 @@ function build() {
   box.innerHTML = `
     <div class="brag-in">
       <div class="brag-top">
-        <h2 id="brag-h">Brag <span>cards</span></h2>
+        <h2 id="brag-h"></h2>
         <button class="brag-btn dark" id="brag-close" type="button">Close</button>
       </div>
-      <p class="brag-sub">Made from your shelf. Pick a colour, tap a card, and share it to your Story.</p>
+      <p class="brag-sub" id="brag-sub"></p>
       <div class="brag-ways" id="brag-ways" role="group" aria-label="Colour"></div>
       <div class="brag-grid" id="brag-grid"></div>
-      <p class="brag-note">Drawn on your phone. Nothing is uploaded or saved. Private books never appear on a card.</p>
+      <p class="brag-note" id="brag-note"></p>
     </div>
     <div class="brag-view" id="brag-view" hidden>
       <img id="brag-big" alt="">
@@ -248,15 +301,6 @@ function build() {
     b.addEventListener('click', () => { if (k !== way) { way = k; paintWays(); drawAll(); } });
     $('brag-ways').appendChild(b);
   }
-  for (const c of CARDS) {
-    const b = document.createElement('button');
-    b.className = 'brag-card'; b.type = 'button'; b.id = 'brag-c-' + c.id;
-    b.innerHTML = `<div class="brag-frame"></div>
-      <div class="brag-label"><b>${c.name}</b><small>${c.note}</small></div>`;
-    b.addEventListener('click', () => openView(c));
-    $('brag-grid').appendChild(b);
-  }
-
   $('brag-close').addEventListener('click', () => setDepth(0));
   $('brag-back').addEventListener('click', () => setDepth(1));
   $('brag-pick').addEventListener('change', () => {
@@ -272,6 +316,20 @@ function build() {
   return (els = box);
 }
 
+// The grid holds whichever deck is open: your six cards, or the circle's months.
+function fillGrid() {
+  const g = $('brag-grid');
+  g.innerHTML = '';
+  for (const c of deck) {
+    const b = document.createElement('button');
+    b.className = 'brag-card'; b.type = 'button'; b.id = 'brag-c-' + c.id;
+    b.innerHTML = `<div class="brag-frame"><div class="brag-wait">Drawing…</div></div>
+      <div class="brag-label"><b>${esc(c.name)}</b><small>${esc(c.note)}</small></div>`;
+    b.addEventListener('click', () => openView(c));
+    g.appendChild(b);
+  }
+}
+
 function paintWays() {
   [...$('brag-ways').children].forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.way === way)));
 }
@@ -285,7 +343,7 @@ const htmlFor = (c, w) => {
 async function drawAll() {
   const mine = ++job, w = way;
   thumbs[w] ??= {};
-  for (const c of CARDS) {
+  for (const c of deck) {
     const btn = $('brag-c-' + c.id), frame = btn.firstElementChild, p = plans[c.id];
     btn.classList.toggle('locked', !!p.locked);
     if (p.locked) {
@@ -401,7 +459,7 @@ function show(d) {
     urls.clear();
     thumbs = {}; full = null; fullUrl = null; current = null;
     $('brag-big').removeAttribute('src');
-    for (const c of CARDS) $('brag-c-' + c.id).firstElementChild.innerHTML = '';
+    for (const c of deck) $('brag-c-' + c.id).firstElementChild.innerHTML = '';
     lastFocus?.focus?.();
   }
   depth = d;
@@ -421,22 +479,38 @@ function setDepth(d) {
   show(d);
 }
 
-// `open` can name a card, and a book on it, to go straight to: "Brag about
-// it" on a finished book opens that book's Finished card. Back from there
-// lands on the grid as usual. A card that's locked, or a book that isn't on
-// it (finished in an earlier year, say), just opens the grid.
+const MODES = {
+  mine: {
+    head: 'Brag <span>cards</span>',
+    sub: 'Made from your shelf. Pick a colour, tap a card, and share it to your Story.',
+    note: 'Drawn on your phone. Nothing is uploaded or saved. Private books never appear on a card.',
+  },
+  circle: {
+    head: 'The <span>circle</span>',
+    sub: 'Everyone’s month on one card, for @pagesofpanvel. This month so far, and last month in full.',
+    note: 'Drawn on your phone from everyone’s public shelves. No names on it, and private books never count.',
+  },
+};
+
+// `open.mode` 'circle' opens the circle's cards instead of your own.
+// `open.card` names a card, and `open.bookId` a book on it, to go straight
+// to: "Brag about it" on a finished book opens that book's Finished card.
+// Back from there lands on the grid as usual. A card that's locked, or a
+// book that isn't on it (finished in an earlier year, say), just opens the grid.
 export async function openBrag(data, open = {}) {
   ctx = data;
-  plans = plan(ctx);
+  const mode = open.mode === 'circle' ? 'circle' : 'mine';
+  if (mode === 'circle') ({ plans, deck } = planCircle(ctx));
+  else { plans = plan(ctx); deck = CARDS; }
   pick = {};
   build();
+  $('brag-h').innerHTML = MODES[mode].head;
+  $('brag-sub').textContent = MODES[mode].sub;
+  $('brag-note').textContent = MODES[mode].note;
+  fillGrid();
   paintWays();
-  for (const c of CARDS) {
-    const f = $('brag-c-' + c.id).firstElementChild;
-    f.innerHTML = '<div class="brag-wait">Drawing…</div>';
-  }
   setDepth(1);
-  const card = CARDS.find((c) => c.id === open.card), p = card && plans[card.id];
+  const card = deck.find((c) => c.id === open.card), p = card && plans[card.id];
   if (p && !p.locked) {
     const at = open.bookId ? p.choices.findIndex((b) => b?.id === open.bookId) : 0;
     if (at >= 0) { pick[card.id] = at; openView(card); return; }
@@ -444,7 +518,7 @@ export async function openBrag(data, open = {}) {
   try {
     await loadFonts();
   } catch {
-    for (const c of CARDS) $('brag-c-' + c.id).firstElementChild.innerHTML =
+    for (const c of deck) $('brag-c-' + c.id).firstElementChild.innerHTML =
       '<div class="brag-wait">Couldn’t load the card fonts. Check your connection and open this again.</div>';
     return;
   }

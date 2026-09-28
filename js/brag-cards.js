@@ -195,6 +195,43 @@ function wrapped(t,d){
   </div>
 </div>` + star('right:420px;top:356px;width:90px;height:90px',t.acc) + footer(t)); }
 
+/* ── 07 The circle ── */
+// Everyone's month on one card, for @pagesofpanvel. No names on it: it goes
+// on a public account, and the circle's own numbers are the story.
+function circle(t,d,i,fs){
+  const st=[
+    {n:d.readers,l:d.readers==='01'?'Reader':'Readers', bg:t.alt,fg:t.altInk,bd:`5px solid ${t.alt}`,sh:`12px 12px 0 ${t.altSh}`,r:-1.5},
+    {n:d.genres,l:d.genres==='01'?'Genre':'Genres',     bg:t.bg,fg:t.ink,bd:`6px dashed ${t.ink}`,sh:'none',r:1.5},
+    {n:d.langs,l:d.langs==='01'?'Language':'Languages', bg:GR,fg:CR,bd:`5px solid ${GR}`,sh:`12px 12px 0 ${t.grSh}`,r:1},
+    {n:d.streak,l:'Longest streak',                     bg:t.acc,fg:t.accInk,bd:`5px solid ${t.acc}`,sh:`12px 12px 0 ${t.accSh}`,r:-2}];
+  const tiles=st.map(s=>`<div style="box-sizing:border-box;height:150px;padding:18px 24px 14px;background:${s.bg};color:${s.fg};border:${s.bd};box-shadow:${s.sh};transform:rotate(${s.r}deg);display:flex;flex-direction:column;justify-content:space-between"><div style="${A75(800)};font-size:104px;line-height:.74;letter-spacing:-.06em;padding-top:8px">${esc(s.n)}</div><div style="${A75(700)};font-size:36px;line-height:1;text-transform:uppercase">${s.l}</div></div>`).join('');
+  const lang=langOf(d.top?.lang);
+  const foot = d.top
+    ? `<div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;${MONO};font-size:24px;letter-spacing:.08em;text-transform:uppercase"><span style="width:48px;height:6px;background:${t.ink}"></span>Most-read this month</div>
+  <div lang="${lang}" style="${A75(700)};font-size:${fs.title}px;line-height:${lh(.92,d.top.title)};letter-spacing:-.02em;text-transform:uppercase;text-wrap:balance;overflow-wrap:anywhere">${esc(d.top.title)}</div>
+  <div lang="${lang}" style="margin-top:12px;${MUKTA};font-size:40px;line-height:1.15;overflow-wrap:anywhere">${d.top.author?esc(d.top.author)+' · ':''}${d.top.n} of us reading it</div>`
+    : `<div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;${MONO};font-size:24px;letter-spacing:.08em;text-transform:uppercase"><span style="width:48px;height:6px;background:${t.ink}"></span>On the shelf</div>
+  <div style="${A75(700)};font-size:${fs.title}px;line-height:.92;letter-spacing:-.02em;text-transform:uppercase">${d.onGo} ${d.onGo===1?'book':'books'} on the go</div>`;
+  return root(t, kicker(t,'No. 07 · The circle') +
+`<div data-fit="title" style="position:absolute;left:80px;right:80px;top:372px;height:1000px;display:flex;flex-direction:column">
+  <div style="display:flex;align-items:flex-end;gap:20px">
+    <div data-fit="month" style="flex:1;min-width:0;white-space:nowrap;${A75(800)};font-size:${fs.month}px;line-height:.8;letter-spacing:-.04em;text-transform:uppercase;padding-top:20px">${esc(d.month)}</div>
+    <div style="flex:none;padding:10px 20px 0;border:5px dashed ${t.ink};${A75(700)};font-size:64px;line-height:1;transform:rotate(3deg)">${esc(d.year)}</div>
+  </div>
+  <div style="display:flex;align-items:flex-start;gap:24px;margin-top:20px">
+    <div style="${A75(800)};font-size:${d.finished.length>2?200:280}px;line-height:.74;letter-spacing:${d.finished.length>2?'-.02em':'-.07em'};margin-left:-14px;flex:none;margin-top:24px;text-shadow:16px 16px 0 ${t.acc}">${esc(d.finished)}</div>
+    <div style="display:flex;flex-direction:column;align-items:flex-start;gap:18px;margin-top:30px">
+      <div style="padding:10px 20px 2px;background:${t.acc};color:${t.accInk};${A75(800)};font-size:72px;line-height:1;text-transform:uppercase;transform:rotate(-3deg);box-shadow:10px 10px 0 ${t.accSh}">${d.finished==='01'?'Book':'Books'} finished</div>
+      <div style="padding:8px 18px 0;border:5px dashed ${t.ink};${A75(700)};font-size:52px;line-height:1;text-transform:uppercase;transform:rotate(2deg)">by the circle</div>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px;margin-top:34px">${tiles}</div>
+  <div style="margin-top:auto;padding-top:24px">${foot}</div>
+</div>` + star('right:90px;top:352px;width:90px;height:90px',t.acc) + footer(t)); }
+
+export const CIRCLE = {id:'circle', no:'07', name:'The circle', note:'the month', draw:circle,
+  sizes:d=>({month:170, title:d.top&&d.top.title.length>24?56:68}), min:{month:90, title:34}};
+
 /* Starting sizes are the design's; fit() in brag.js shrinks toward min. */
 const tSize = s => s.length>40?80 : s.length>24?96 : 116;
 const sSize = s => s.length<=6?210 : s.length<=12?150 : 118;
