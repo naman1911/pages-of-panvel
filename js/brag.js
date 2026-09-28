@@ -421,7 +421,11 @@ function setDepth(d) {
   show(d);
 }
 
-export async function openBrag(data) {
+// `open` can name a card, and a book on it, to go straight to: "Brag about
+// it" on a finished book opens that book's Finished card. Back from there
+// lands on the grid as usual. A card that's locked, or a book that isn't on
+// it (finished in an earlier year, say), just opens the grid.
+export async function openBrag(data, open = {}) {
   ctx = data;
   plans = plan(ctx);
   pick = {};
@@ -432,6 +436,11 @@ export async function openBrag(data) {
     f.innerHTML = '<div class="brag-wait">Drawing…</div>';
   }
   setDepth(1);
+  const card = CARDS.find((c) => c.id === open.card), p = card && plans[card.id];
+  if (p && !p.locked) {
+    const at = open.bookId ? p.choices.findIndex((b) => b?.id === open.bookId) : 0;
+    if (at >= 0) { pick[card.id] = at; openView(card); return; }
+  }
   try {
     await loadFonts();
   } catch {
