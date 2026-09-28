@@ -27,7 +27,7 @@ export async function loadFonts(){
   if (css) return css;
   const t0 = performance.now(), rules = [];
   for (const [fam,w,st,files] of FACES) for (const f of files){
-    const buf = await (await fetch(f)).arrayBuffer(); bytes += buf.byteLength;
+    const buf = await (await fetch('../fonts/'+f)).arrayBuffer(); bytes += buf.byteLength;
     rules.push(`@font-face{font-family:'${fam}';font-weight:${w};font-style:normal;font-stretch:${st};src:url(data:font/woff2;base64,${b64(buf)}) format('woff2')}`);
   }
   ms = Math.round(performance.now()-t0);

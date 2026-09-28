@@ -644,6 +644,33 @@ $("checkin").addEventListener("click", async () => {
   party(next >= 7 ? `${next} days straight!` : CHEERS[hash(todayISO()) % CHEERS.length]);
 });
 
+// Brag cards live in brag.js and are fetched on the first tap, so nobody
+// downloads them until they want one. The button ships hidden and only this
+// line shows it: if a cached copy of this file or of index.html is out of
+// step with the other, there's no dead button, and no missing one to crash on.
+const bragBtn = $("brag");
+if (bragBtn) {
+  bragBtn.hidden = false;
+  bragBtn.addEventListener("click", async () => {
+    if (bragBtn.dataset.busy) return;
+    bragBtn.dataset.busy = "1";
+    try {
+      const { openBrag } = await import("./brag.js");
+      // A copy, so nothing on a card can ever change what the site holds.
+      const snap = structuredClone({
+        me: state.pub.members[state.user.uid] || { name: state.user.displayName, days: [] },
+        mine: myBooksPublic(),
+        books: state.pub.books,
+      });
+      await openBrag({ ...snap, uid: state.user.uid, inkFor, streakOf, norm });
+    } catch {
+      showError("Couldn't open the brag cards. Check your connection and try again.");
+    } finally {
+      delete bragBtn.dataset.busy;
+    }
+  });
+}
+
 $("board").addEventListener("click", async (e) => {
   const btn = e.target.closest('button[data-act="unpin"]');
   if (!btn) return;
