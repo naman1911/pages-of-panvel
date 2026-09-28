@@ -53,6 +53,33 @@ function hash(s) {
 const inkFor = (s) => INKS[hash(s) % INKS.length];
 const heightFor = (s) => 124 + (hash(s + "h") % 72);
 
+// Book covers, from Open Library via covers.js. This map is its answer sheet:
+// a book's key → cover URL, or "" for none. A book with no answer yet keeps
+// its coloured chip, and so does anything that goes wrong along the way.
+// Private books are never looked up: their titles don't leave the phone.
+// Nor are books without an author (too easy to match the wrong cover), or
+// in Devanagari (Open Library has almost none).
+const COVERS = new Map();
+function coverKey(b) {
+  if (b.isPrivate || !b.author || /[\u0900-\u097F]/.test(b.title + b.author)) return null;
+  return norm(b.title) + "|" + norm(b.author);
+}
+function chip(b) {
+  const bg = inkFor(b.title), key = coverKey(b), url = key && COVERS.get(key);
+  if (url) return `<img class="chip cover" src="${esc(url)}" alt="" decoding="async" referrerpolicy="no-referrer" style="background:${bg}" data-cover-key="${esc(key)}">`;
+  const ask = key && !COVERS.has(key)
+    ? ` data-cover="${esc(key)}" data-t="${esc(b.title)}" data-a="${esc(b.author)}"` : "";
+  return `<div class="chip" style="background:${bg}"${ask}></div>`;
+}
+// Start looking covers up once the page has settled, so it never competes
+// with signing in or the first load of the shelf.
+let coversStarted = false;
+function startCovers() {
+  if (coversStarted) return;
+  coversStarted = true;
+  setTimeout(() => import("./covers.js").then((m) => m.start(COVERS)).catch(() => {}), 2000);
+}
+
 function streakOf(days = []) {
   if (!days.length) return 0;
   const set = new Set(days);
@@ -294,6 +321,7 @@ function renderAll() {
   renderMine();
   renderStandings();
   renderSunday();
+  startCovers();
 }
 
 function renderHero() {
@@ -399,7 +427,7 @@ function renderWall() {
 
   $("wall").innerHTML = books.map((b) => `
     <div class="entry" id="e-${esc(b.id)}">
-      <div class="chip" style="background:${inkFor(b.title)}"></div>
+      ${chip(b)}
       <div class="body">
         <div class="title">${esc(b.title)}</div>
         <div class="meta">${b.author ? esc(b.author) + " — " : ""}${esc(readerName(b.uid))}${b.uid === state.user.uid ? " (you)" : ""}</div>
@@ -442,7 +470,7 @@ function renderMine() {
     const alone = !state.pub.books.some((o) => o.uid !== state.user.uid && norm(o.title) === norm(b.title));
     return `
     <div class="entry">
-      <div class="chip" style="background:${inkFor(b.title)}"></div>
+      ${chip(b)}
       <div class="body">
         <div class="title">${esc(b.title)}</div>
         <div class="meta">${esc(b.author || "author unknown")}</div>
@@ -543,7 +571,7 @@ function renderSunday() {
   const lend = state.pub.books.filter((b) => b.lendable);
   $("lendable").innerHTML = lend.length ? lend.map((b) => `
     <div class="entry">
-      <div class="chip" style="background:${inkFor(b.title)}"></div>
+      ${chip(b)}
       <div class="body">
         <div class="title">${esc(b.title)}</div>
         <div class="meta">${b.author ? esc(b.author) + " — " : ""}from ${esc(readerName(b.uid))}</div>
@@ -670,6 +698,7 @@ async function openBragCards(open = {}) {
       me: state.pub.members[state.user.uid] || { name: state.user.displayName, days: [] },
       mine: myBooksPublic(),
       books: state.pub.books,
+      members: state.pub.members,
     });
     await openBrag({ ...snap, uid: state.user.uid, inkFor, streakOf, norm }, open);
   } catch {
@@ -682,6 +711,11 @@ const bragBtn = $("brag");
 if (bragBtn) {
   bragBtn.hidden = false;
   bragBtn.addEventListener("click", () => openBragCards());
+}
+const circleBtn = $("circle-card");
+if (circleBtn) {
+  circleBtn.hidden = false;
+  circleBtn.addEventListener("click", () => openBragCards({ mode: "circle" }));
 }
 
 $("board").addEventListener("click", async (e) => {
