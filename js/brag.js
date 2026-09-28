@@ -42,7 +42,9 @@ function lastFourteen(days) {
 /* ---------- what each card says, from the reader's own shelf ---------- */
 
 // For each card: either { choices, data(choice) } or { locked: "how to unlock" }.
-function plan(ctx) {
+// plan, planCircle and fit are exported for /guide, which draws its sample
+// cards with them. The site itself only calls openBrag.
+export function plan(ctx) {
   const { me, mine, books, uid, inkFor, streakOf, norm } = ctx;
   const name = firstName(me.name);
   const year = mine.filter((b) => inYear(b.startedAt) || inYear(b.finishedAt));
@@ -112,7 +114,7 @@ const monthKey = (back) => {
 const monthName = (m) => new Date(m + '-01T00:00:00Z').toLocaleString('en', { month: 'long', timeZone: 'UTC' });
 
 // This month and last, so the card can go up on the 1st for the month just gone.
-function planCircle(ctx) {
+export function planCircle(ctx) {
   const { members, books, norm } = ctx;
   const out = {}, deck = [];
   [0, 1].forEach((back) => {
@@ -182,7 +184,7 @@ function overflows(el) {
   return lo < -1 || hi > el.clientHeight + 1;
 }
 
-function fit(card, t, d, i) {
+export function fit(card, t, d, i) {
   const fs = card.sizes(d), st = getStage();
   let html = '';
   for (let k = 0; k < 16; k++) {
