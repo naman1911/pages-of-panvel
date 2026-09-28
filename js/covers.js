@@ -11,8 +11,8 @@
    few failed lookups in a row it stops asking for the rest of the visit.
 
    It is careful about what it matches. A wrong cover is worse than none, so
-   a cover is used only when the title agrees and the author's surname does
-   too. What gets sent is a book's title and author, and only for public
+   a cover is used only when the title's words agree and the author's
+   surname does too. What gets sent is a book's title and author, and only for public
    books: app.js never marks a private one.                                  */
 
 const SEARCH = 'https://openlibrary.org/search.json';
@@ -27,13 +27,20 @@ const n = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]
   .replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim().replace(/^(the|a|an) /, '');
 const surname = (s) => n(s).split(' ').pop() || '';
 
-// "A Fine Balance" matches "A Fine Balance: A Novel" either way round, but
-// a one-word title has to match exactly.
+// Titles get typed from memory, so they match on words, not letters.
+// "lord of flies" finds "Lord of the Flies", and "you should talk to someone"
+// finds "Maybe You Should Talk to Someone": every word typed has to be in
+// the real title (or the other way round, for a typed subtitle). A one-word
+// title is too loose for that, so it has to be the real title's first word:
+// "hobbit" finds "The Hobbit, or There and Back Again", not "The Annotated
+// Hobbit". The author's surname is checked as well, in pick().
 function sameTitle(a, b) {
-  if (!a || !b) return false;
-  if (a === b) return true;
-  const [short, long] = a.length < b.length ? [a, b] : [b, a];
-  return short.includes(' ') && long.startsWith(short + ' ');
+  const x = a.split(' ').filter(Boolean), y = b.split(' ').filter(Boolean);
+  if (!x.length || !y.length) return false;
+  const [short, long] = x.length <= y.length ? [x, y] : [y, x];
+  if (short.length === 1) return long[0] === short[0];
+  const have = new Set(long);
+  return short.every((w) => have.has(w));
 }
 
 function pick(docs, title, author) {
@@ -54,7 +61,9 @@ async function lookup(title, author) {
   const ctl = new AbortController();
   const timer = setTimeout(() => ctl.abort(), TIMEOUT);
   try {
-    const q = new URLSearchParams({ title, author, limit: '5', fields: 'cover_i,title,author_name' });
+    // Only the surname goes in the search. A misspelt first name ("Mich
+    // Albom") or initials ("J.R.R.") otherwise make it come back empty.
+    const q = new URLSearchParams({ title, author: surname(author), limit: '10', fields: 'cover_i,title,author_name' });
     const r = await fetch(`${SEARCH}?${q}`, { signal: ctl.signal, credentials: 'omit', referrerPolicy: 'no-referrer' });
     if (!r.ok) throw new Error(String(r.status));
     return pick((await r.json()).docs, title, author);
