@@ -312,6 +312,10 @@ button{font:inherit;color:inherit}
 .tag.y{background:var(--ink);color:var(--cream);box-shadow:none}
 .tag.k{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
 .acts{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
+/* "Brag about it" on a book just finished: lit in mustard, and pulsed a few
+   times once the celebration overlay has cleared (it lasts 2.4s). */
+.btn.ghost.nudge{background:var(--mustard);color:var(--ink);box-shadow:none;animation:nudge .7s ease 2.4s 3}
+@keyframes nudge{50%{transform:scale(1.1)}}
 .editor{display:grid;gap:8px;margin-top:10px;padding:12px;background:var(--paper-3);border-left:3px solid var(--green)}
 
 /* Agenda posts: app.js emits .entry > .body > div (no class) + .meta */

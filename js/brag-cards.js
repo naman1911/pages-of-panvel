@@ -1,7 +1,7 @@
 /* Brag cards: the six Instagram Story templates, 1080 × 1920.
 
-   A port of the Claude Design "Pages of Panvel Stories" file (the same one
-   behind /spike), taught to take real shelves instead of sample data: any
+   A port of the Claude Design "Pages of Panvel Stories" file, taught to take
+   real shelves instead of sample data: any
    title length, Marathi and Hindi, no author, nobody else reading it, a quote
    of 300 characters.
 

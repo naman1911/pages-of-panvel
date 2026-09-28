@@ -100,6 +100,9 @@ const EMPTY = { members: {}, books: [], board: [] };
 let state = { pub: EMPTY, priv: { books: [] }, user: null, busy: false };
 let filters = { genre: null, lang: null, lendable: false, mine: false };
 let tab = "shelf";
+// The book just marked finished, so its "Brag about it" button can light up
+// for a moment. Cleared on a timer; it only ever changes how a button looks.
+let justFinished = null;
 
 // A transaction that never settles — the connection drops mid-write — used to
 // leave state.busy stuck true, because the reset sat after the try/catch instead
@@ -447,6 +450,7 @@ function renderMine() {
           ${alone && !b.isPrivate ? `<span class="tag p">first in the circle</span>` : ""}</div>
         ${b.line ? `<div class="line">${esc(b.line)}</div>` : ""}
         <div class="acts">
+          ${b.status === "finished" && !b.isPrivate ? `<button class="btn ghost${b.id === justFinished ? " nudge" : ""}" data-act="brag" data-id="${esc(b.id)}">Brag about it ✦</button>` : ""}
           ${b.status === "reading" ? `<button class="btn ghost" data-act="finish" data-id="${esc(b.id)}" data-p="${b.isPrivate ? 1 : 0}">I finished it</button>` : ""}
           <button class="btn ghost" data-act="line" data-id="${esc(b.id)}" data-p="${b.isPrivate ? 1 : 0}">${b.line ? "Change the line" : "Save a line you liked"}</button>
           ${b.isPrivate ? "" : `<button class="btn ghost" data-act="lend" data-id="${esc(b.id)}">${b.lendable ? "Keeping it" : "Happy to lend it"}</button>`}
@@ -607,9 +611,15 @@ $("my-books").addEventListener("click", async (e) => {
     : mutate((c) => { c.books = c.books.map((x) => x.id === id ? { ...x, ...changes } : x); return c; });
 
   if (act === "finish") {
+    // Private books never go on a card, so only public ones get the offer.
+    if (!isPriv) {
+      justFinished = id;
+      setTimeout(() => { if (justFinished === id) justFinished = null; }, 20000);
+    }
     await patch({ status: "finished", finishedAt: todayISO() });
     party("Finished. That's one more.");
   }
+  if (act === "brag") openBragCards({ card: "finished", bookId: id });
   if (act === "lend") {
     const cur = state.pub.books.find((x) => x.id === id);
     await patch({ lendable: !cur?.lendable });
@@ -645,30 +655,33 @@ $("checkin").addEventListener("click", async () => {
 });
 
 // Brag cards live in brag.js and are fetched on the first tap, so nobody
-// downloads them until they want one. The button ships hidden and only this
-// line shows it: if a cached copy of this file or of index.html is out of
-// step with the other, there's no dead button, and no missing one to crash on.
+// downloads them until they want one. The Mine-tab button ships hidden and
+// only this code shows it: if a cached copy of this file or of index.html is
+// out of step with the other, there's no dead button, and no missing one to
+// crash on. `open` can name a card and book to go straight to.
+let bragOpening = false;
+async function openBragCards(open = {}) {
+  if (bragOpening) return;
+  bragOpening = true;
+  try {
+    const { openBrag } = await import("./brag.js");
+    // A copy, so nothing on a card can ever change what the site holds.
+    const snap = structuredClone({
+      me: state.pub.members[state.user.uid] || { name: state.user.displayName, days: [] },
+      mine: myBooksPublic(),
+      books: state.pub.books,
+    });
+    await openBrag({ ...snap, uid: state.user.uid, inkFor, streakOf, norm }, open);
+  } catch {
+    showError("Couldn't open the brag cards. Check your connection and try again.");
+  } finally {
+    bragOpening = false;
+  }
+}
 const bragBtn = $("brag");
 if (bragBtn) {
   bragBtn.hidden = false;
-  bragBtn.addEventListener("click", async () => {
-    if (bragBtn.dataset.busy) return;
-    bragBtn.dataset.busy = "1";
-    try {
-      const { openBrag } = await import("./brag.js");
-      // A copy, so nothing on a card can ever change what the site holds.
-      const snap = structuredClone({
-        me: state.pub.members[state.user.uid] || { name: state.user.displayName, days: [] },
-        mine: myBooksPublic(),
-        books: state.pub.books,
-      });
-      await openBrag({ ...snap, uid: state.user.uid, inkFor, streakOf, norm });
-    } catch {
-      showError("Couldn't open the brag cards. Check your connection and try again.");
-    } finally {
-      delete bragBtn.dataset.busy;
-    }
-  });
+  bragBtn.addEventListener("click", () => openBragCards());
 }
 
 $("board").addEventListener("click", async (e) => {

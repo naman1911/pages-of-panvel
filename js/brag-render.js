@@ -4,7 +4,7 @@
    onto a canvas, and the canvas out as a PNG. Canvas text can't do this
    design: it ignores font-stretch, and the condensed Anek is the look.
 
-   What the /spike test page found, and why this file looks the way it does:
+   What the test spike found, and why this file looks the way it does:
      · fonts the page has loaded are IGNORED inside foreignObject, so they are
        fetched here and embedded in every SVG as base64
      · the SVG must go in as a data: URI. A blob: URL taints the canvas and
