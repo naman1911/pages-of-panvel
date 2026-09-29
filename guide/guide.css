@@ -281,3 +281,7 @@ footer .see span{color:var(--mustard)}
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes nudge{50%{transform:scale(1.1)}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none !important;transition:none !important}html{scroll-behavior:auto}}
+
+/* Brand marks (Simple Icons, CC0), in the text colour of the button. */
+.ico{width:18px;height:18px;flex:0 0 auto;fill:currentColor}
+.p-btn .ico{width:14px;height:14px;margin-right:6px}
