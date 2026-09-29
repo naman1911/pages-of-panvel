@@ -144,7 +144,19 @@
       <div id="shelf" class="shelf"></div>
       <div class="shelf-plank" aria-hidden="true"></div>
     </div>
-    <p id="shelf-more" class="shelf-more" hidden>scroll for more →</p>
+    <!-- The price tag. app.js shows and hides #shelf-more just as it did the
+         old "scroll for more" line; js/shelf-hint.js fills in the count. -->
+    <div class="shelf-hint">
+      <button type="button" class="hint-back" aria-label="Back to the start of the shelf">← back</button>
+      <button type="button" id="shelf-more" class="shelf-more" aria-label="More books on the shelf. Show the next ones." hidden>
+        <b class="hint-n">+<span data-hint="left"></span></b>
+        <span class="hint-t">more<br>books</span>
+        <span class="hint-arr" aria-hidden="true">→</span>
+        <i class="hint-spark" aria-hidden="true"></i>
+        <span class="hint-note" aria-hidden="true">swipe <span class="hint-note-arr">⟷</span></span>
+      </button>
+      <p class="hint-end" role="status">That's the whole shelf <i class="hint-spark" aria-hidden="true"></i></p>
+    </div>
     <p id="shelf-empty" class="quiet" hidden>The shelf is empty. Whoever adds the first book gets to say they started it.</p>
 
     <div id="twins"></div>
@@ -254,5 +266,6 @@
 <div id="party" hidden><p id="party-msg"></p></div>
 
 <script type="module" src="js/app.js"></script>
+<script type="module" src="js/shelf-hint.js"></script>
 </body>
 </html>
