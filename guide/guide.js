@@ -359,7 +359,7 @@ function sundayTab() {
     <div class="board" style="border-top-color:var(--mustard)"><h4>Every Sunday, 8:30am</h4>
       <p class="note">In the park, Panvel. Bring whatever you're reading.</p>
       <div class="acts"><a class="p-btn" style="display:inline-flex;align-items:center;text-decoration:none" href="${MAP}" target="_blank" rel="noopener">${ICON.maps}Directions to the park</a>
-        <a class="p-btn ghost" style="display:inline-flex;align-items:center;text-decoration:none" href="${INSTA}" target="_blank" rel="noopener">${ICON.ig}@pagesofpanvel</a></div>
+        <a class="p-btn" style="display:inline-flex;align-items:center;text-decoration:none;background:var(--red);color:var(--cream)" href="${INSTA}" target="_blank" rel="noopener">${ICON.ig}@pagesofpanvel</a></div>
       <p class="note" style="margin:10px 0 0">Add Sunday to my calendar</p>
       <div class="acts"><a class="p-btn" style="display:inline-flex;align-items:center;text-decoration:none;background:var(--mustard);color:var(--ink)" href="../sunday.ics">${ICON.apple}Apple / other calendar</a>
         <a class="p-btn ghost" style="display:inline-flex;align-items:center;text-decoration:none" href="${esc(GCAL)}" target="_blank" rel="noopener">${ICON.gcal}Google Calendar</a></div>

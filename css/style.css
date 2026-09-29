@@ -182,6 +182,9 @@ a.btn:hover{color:var(--cream)}
 /* Brand marks (Simple Icons, CC0) in the text colour of whatever they sit on. */
 .ico{width:18px;height:18px;flex:0 0 auto;fill:currentColor}
 .find-row a{gap:8px}
+/* Instagram gets the brick red, so it stands level with Directions. */
+.btn.insta{background:var(--red);color:var(--cream)}
+.btn.insta:hover{background:var(--ink)}
 .gate-links .ico{width:15px;height:15px}
 .find-row .btn{min-height:44px;padding:6px 10px;line-height:1.35}
 .find-row .big-btn{font-size:16px;min-height:52px;padding:6px 10px;line-height:1.1}
