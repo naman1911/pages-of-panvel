@@ -4,22 +4,22 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Pages of Panvel — a reading circle</title>
-<meta name="description" content="A reading circle in Panvel. Sundays, 8am, in the park.">
+<meta name="description" content="A reading circle in Panvel. Sundays, 8:30am, in the park.">
 <!-- The phone's address bar: the same cream as the page. -->
 <meta name="theme-color" content="#E9E0CB">
 <meta property="og:title" content="Pages of Panvel">
-<meta property="og:description" content="A reading circle. Sundays in the park, 8am.">
+<meta property="og:description" content="A reading circle. Sundays in the park, 8:30am.">
 <!-- The picture WhatsApp, Instagram and others show when the link is pasted.
      Must be an absolute URL. The name sits in the middle square, because
      some apps crop the preview to one. -->
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://pagesofpanvel.in/">
 <meta property="og:site_name" content="Pages of Panvel">
-<meta property="og:image" content="https://pagesofpanvel.in/img/share.png">
+<meta property="og:image" content="https://pagesofpanvel.in/img/share.png?v=2">
 <meta property="og:image:type" content="image/png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Pages of Panvel, a reading circle. Sundays, 8am, the park.">
+<meta property="og:image:alt" content="Pages of Panvel, a reading circle. Sundays, 8:30am, the park.">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='4' fill='%23E9E0CB'/%3E%3Crect x='4' y='9' width='7' height='17' fill='%23C0302A'/%3E%3Crect x='4' y='12' width='7' height='2' fill='%23241D18'/%3E%3Crect x='12' y='5' width='7' height='21' fill='%23D89C24'/%3E%3Crect x='12' y='8' width='7' height='2' fill='%23241D18'/%3E%3Cg transform='rotate(16 27 26)'%3E%3Crect x='20' y='11' width='7' height='15' fill='%231F5233'/%3E%3Crect x='20' y='14' width='7' height='2' fill='%23E9E0CB'/%3E%3C/g%3E%3Crect x='2' y='26' width='28' height='3' fill='%23241D18'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -75,7 +75,7 @@
 <!-- ─── gate / sign-in ────────────────────────────────── -->
 <section id="gate" hidden>
   <div class="gate-inner">
-    <p class="kicker">Sundays · 8am · the park</p>
+    <p class="kicker">Sundays · 8:30am · the park</p>
 
     <h1 class="masthead">
       <span class="m-1">PAGES</span>
@@ -99,6 +99,10 @@
 
       <p class="gate-note">Sign in with a Google account and you're in — no invite, no waiting.</p>
       <p class="gate-demo"><a href="?demo">or poke around the demo →</a></p>
+      <p class="gate-links">
+        <a href="https://share.google/BsnNN572YvxyMouI4" target="_blank" rel="noopener">Find the park</a>
+        <a href="https://www.instagram.com/pagesofpanvel/" target="_blank" rel="noopener">@pagesofpanvel</a>
+      </p>
     </div>
 
     <div class="gate-ticker" aria-hidden="true">
@@ -203,6 +207,23 @@
   <section id="panel-sunday" class="panel" hidden>
     <h2 class="h-big">SUN<br>DAY</h2>
     <p id="sunday-heading" class="shelf-sub"></p>
+
+    <!-- Plain links, no script: the calendar event is a static file
+         (sunday.ics) and a Google Calendar template link, both starting on
+         the first Sunday the button went up and repeating weekly. -->
+    <div class="block find-us">
+      <h3 class="h-mid">Every Sunday, 8:30am</h3>
+      <p class="quiet">In the park, Panvel. Bring whatever you're reading.</p>
+      <div class="find-row">
+        <a class="btn" href="https://share.google/BsnNN572YvxyMouI4" target="_blank" rel="noopener">Directions to the park →</a>
+        <a class="btn ghost" href="https://www.instagram.com/pagesofpanvel/" target="_blank" rel="noopener">@pagesofpanvel on Instagram</a>
+      </div>
+      <p class="find-label">Add Sunday to my calendar</p>
+      <div class="find-row">
+        <a class="big-btn lime" href="https://calendar.google.com/calendar/render?action=TEMPLATE&amp;text=Pages%20of%20Panvel%20%C2%B7%20Sunday%20reading%20circle&amp;dates=20261004T083000%2F20261004T100000&amp;ctz=Asia%2FKolkata&amp;recur=RRULE%3AFREQ%3DWEEKLY%3BBYDAY%3DSU&amp;location=The%20park%2C%20Panvel&amp;details=Bring%20whatever%20you%27re%20reading.%0A%0ADirections%3A%20https%3A%2F%2Fshare.google%2FBsnNN572YvxyMouI4%0AThe%20shelf%3A%20https%3A%2F%2Fpagesofpanvel.in%0AInstagram%3A%20https%3A%2F%2Fwww.instagram.com%2Fpagesofpanvel%2F" target="_blank" rel="noopener">Google Calendar</a>
+        <a class="big-btn outline" href="sunday.ics">Apple / other calendar</a>
+      </div>
+    </div>
 
     <div class="block">
       <h3 class="h-mid">Agenda — add anything</h3>

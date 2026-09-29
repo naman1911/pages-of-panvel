@@ -16,5 +16,5 @@ export const firebaseConfig = {
 export const CIRCLE = {
   name: "Pages of Panvel",
   where: "the park",
-  when: "Sundays, 8am",
+  when: "Sundays, 8:30am",
 };
