@@ -111,6 +111,7 @@ button{font:inherit;color:inherit}
 .gate-note{font-size:13px;color:var(--dim);max-width:38ch}
 .gate-demo{font-family:var(--mono);font-size:12px}
 .gate-links{display:flex;gap:16px;flex-wrap:wrap;font-family:var(--mono);font-size:12px}
+.gate-links a{display:inline-flex;align-items:center;gap:6px}
 .gate-ticker{margin:18px -20px 0;border-top:1px solid var(--hair);padding:12px 0;overflow:hidden}
 .ticker-run{
   display:flex;gap:18px;width:max-content;
@@ -178,6 +179,10 @@ button{font:inherit;color:inherit}
 a.btn,a.big-btn{text-decoration:none;display:flex;align-items:center;justify-content:center;text-align:center}
 a.btn:hover{color:var(--cream)}
 .find-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+/* Brand marks (Simple Icons, CC0) in the text colour of whatever they sit on. */
+.ico{width:18px;height:18px;flex:0 0 auto;fill:currentColor}
+.find-row a{gap:8px}
+.gate-links .ico{width:15px;height:15px}
 .find-row .btn{min-height:44px;padding:6px 10px;line-height:1.35}
 .find-row .big-btn{font-size:16px;min-height:52px;padding:6px 10px;line-height:1.1}
 .find-row .big-btn.outline{margin-top:0}
