@@ -63,8 +63,8 @@ const RM = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 const ME = "u-nitya";
 const MAP = "https://share.google/BsnNN572YvxyMouI4";
-const INSTA = "https://www.instagram.com/pagesofpanvel/";
-const GCAL = "https://calendar.google.com/calendar/render?action=TEMPLATE&text=Pages%20of%20Panvel%20%C2%B7%20Sunday%20reading%20circle&dates=20261004T083000%2F20261004T100000&ctz=Asia%2FKolkata&recur=RRULE%3AFREQ%3DWEEKLY%3BBYDAY%3DSU&location=The%20park%2C%20Panvel&details=Bring%20whatever%20you%27re%20reading.%0A%0ADirections%3A%20https%3A%2F%2Fshare.google%2FBsnNN572YvxyMouI4%0AThe%20shelf%3A%20https%3A%2F%2Fpagesofpanvel.in%0AInstagram%3A%20https%3A%2F%2Fwww.instagram.com%2Fpagesofpanvel%2F";
+const INSTA = "https://www.instagram.com/pagesofpanvel?stkn=ejZuc3VsaTRxdW0=";
+const GCAL = "https://calendar.google.com/calendar/render?action=TEMPLATE&text=Pages%20of%20Panvel%20%C2%B7%20Sunday%20reading%20circle&dates=20261004T083000%2F20261004T100000&ctz=Asia%2FKolkata&recur=RRULE%3AFREQ%3DWEEKLY%3BBYDAY%3DSU&location=The%20park%2C%20Panvel&details=Bring%20whatever%20you%27re%20reading.%0A%0ADirections%3A%20https%3A%2F%2Fshare.google%2FBsnNN572YvxyMouI4%0AThe%20shelf%3A%20https%3A%2F%2Fpagesofpanvel.in%0AInstagram%3A%20https%3A%2F%2Fwww.instagram.com%2Fpagesofpanvel%3Fstkn%3DejZuc3VsaTRxdW0%3D";
 let seq = 100;
 const B = (uid, title, author, genre, lang, status, started, extra = {}) => ({
   id: "b" + (seq++), uid, title, author, genre, lang, status, startedAt: d(started),
