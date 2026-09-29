@@ -62,6 +62,9 @@ const RM = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 /* ---------- Nitya's circle ---------- */
 
 const ME = "u-nitya";
+const MAP = "https://share.google/BsnNN572YvxyMouI4";
+const INSTA = "https://www.instagram.com/pagesofpanvel?stkn=ejZuc3VsaTRxdW0=";
+const GCAL = "https://calendar.google.com/calendar/render?action=TEMPLATE&text=Pages%20of%20Panvel%20%C2%B7%20Sunday%20reading%20circle&dates=20261004T083000%2F20261004T100000&ctz=Asia%2FKolkata&recur=RRULE%3AFREQ%3DWEEKLY%3BBYDAY%3DSU&location=The%20park%2C%20Panvel&details=Bring%20whatever%20you%27re%20reading.%0A%0ADirections%3A%20https%3A%2F%2Fshare.google%2FBsnNN572YvxyMouI4%0AThe%20shelf%3A%20https%3A%2F%2Fpagesofpanvel.in%0AInstagram%3A%20https%3A%2F%2Fwww.instagram.com%2Fpagesofpanvel%3Fstkn%3DejZuc3VsaTRxdW0%3D";
 let seq = 100;
 const B = (uid, title, author, genre, lang, status, started, extra = {}) => ({
   id: "b" + (seq++), uid, title, author, genre, lang, status, startedAt: d(started),
@@ -213,7 +216,7 @@ function header() {
   const people = Object.keys(S.members).length;
   const finished = S.books.filter((b) => b.status === "finished").length;
   $("p-badge").textContent = `${people} ${plural(people, "readers")} · ${finished} finished`;
-  $("p-tagline").textContent = `A reading circle. Sundays, 8am in the park. Next one ${nextSunday()}.`;
+  $("p-tagline").textContent = `A reading circle. Sundays, 8:30am in the park. Next one ${nextSunday()}.`;
 }
 
 function tags(b, counts) {
@@ -351,6 +354,14 @@ function sundayTab() {
   return `
     <h3 class="p-h">Sun<br>day</h3>
     <p class="p-sub" style="font-family:var(--body);font-size:14px">Bringing it up on ${nextSunday()}</p>
+    <div class="board" style="border-top-color:var(--mustard)"><h4>Every Sunday, 8:30am</h4>
+      <p class="note">In the park, Panvel. Bring whatever you're reading.</p>
+      <div class="acts"><a class="p-btn" style="display:inline-flex;align-items:center;text-decoration:none" href="${MAP}" target="_blank" rel="noopener">Directions to the park →</a>
+        <a class="p-btn ghost" style="display:inline-flex;align-items:center;text-decoration:none" href="${INSTA}" target="_blank" rel="noopener">@pagesofpanvel</a></div>
+      <p class="note" style="margin:10px 0 0">Add Sunday to my calendar</p>
+      <div class="acts"><a class="p-btn" style="display:inline-flex;align-items:center;text-decoration:none;background:var(--mustard);color:var(--ink)" href="../sunday.ics">Apple / other calendar</a>
+        <a class="p-btn ghost" style="display:inline-flex;align-items:center;text-decoration:none" href="${esc(GCAL)}" target="_blank" rel="noopener">Google Calendar</a></div>
+    </div>
     <div class="p-head"><h4>Agenda — add anything</h4></div>
     <p class="p-sub" style="font-family:var(--body);font-size:12px;margin:0">A book you want to argue about, a passage to read out, something you can't stop recommending.</p>
     <div class="p-post"><textarea id="board-text" rows="2" maxlength="280" placeholder="I want to read 4 pages of बटाट्याची चाळ out loud"></textarea>
@@ -404,6 +415,7 @@ const NOTES = {
   sunday: {
     kick: "Tab 4 · Sunday", h: "The agenda",
     items: [
+      "<strong>Every Sunday, 8:30am:</strong> directions to the park, the circle's Instagram, and <strong>Add Sunday to my calendar</strong>. Google Calendar or any other calendar, repeating every week, with a nudge the evening before.",
       "Anything you want to bring up on Sunday: a book to argue about, a passage to read out loud, a recommendation. Tap <strong>\"Pin it\"</strong>.",
       "You can delete your own posts. Only yours.",
       "<strong>Copies on offer:</strong> every book someone is happy to lend. Just ask them at the park.",
@@ -568,6 +580,7 @@ const FAQ = [
   ["How do I post a brag card?", "Mine → \"Make a brag card ✦\".", "Pick a colour, tap a card, tap \"Share\", then Instagram and Stories. No Share button? \"Save image\", then post it from your photos."],
   ["Can I delete an agenda post?", "Your own, yes.", "Tap \"Delete\" under it. Nobody can delete anyone else's."],
   ["Does Marathi or Hindi work?", "Yes, everywhere.", "Titles, authors, saved lines and cards, the lot."],
+  ["Where exactly is the park?", "It's on the Sunday tab.", "The Sunday tab has \"Directions to the park\", and \"Add Sunday to my calendar\" puts every Sunday, 8:30am, in your calendar."],
   ["Can I look around first?", "Yes.", "pagesofpanvel.in/?demo is the whole site on sample data. Nothing you do there is saved."],
 ];
 $("faq-list").innerHTML = FAQ.map(([q, s, a]) => `<details><summary><span>${esc(q)}</span><i aria-hidden="true">+</i></summary><p><strong>${esc(s)}</strong> ${esc(a)}</p></details>`).join("");
