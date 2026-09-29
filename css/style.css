@@ -206,11 +206,48 @@ a.btn:hover{color:var(--cream)}
   background:linear-gradient(90deg,transparent,var(--paper));
 }
 .shelf-wrap.more::after{opacity:.92}
-.shelf-more{
-  margin-top:9px;text-align:right;
-  font-family:var(--mono);font-size:10px;letter-spacing:.14em;
-  text-transform:uppercase;color:var(--red-dk);
-  animation:nudge 1.9s ease-in-out infinite;
+/* The "more books this way" price tag hanging off the plank (js/shelf-hint.js).
+   #shelf-more is the tag itself; app.js still shows and hides it exactly as it
+   did the old text line. When the shelf ends it becomes a red sign-off, and a
+   "back" tag appears once you've scrolled. From the Claude Design "Shelf Hint",
+   option A. */
+.shelf-hint{position:relative;z-index:2;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;min-height:92px;margin:0}
+.shelf-hint button{appearance:none;margin:0;font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.shelf-hint button:focus-visible{outline:3px solid var(--ink);outline-offset:3px}
+.shelf-hint .hint-end{display:none}
+.shelf-hint.scrolled .shelf-more[hidden] ~ .hint-end{display:flex}
+.hint-back{visibility:hidden;opacity:0;transition:opacity .2s,visibility 0s .2s}
+.shelf-hint.scrolled .hint-back{visibility:visible;opacity:1;transition:opacity .2s}
+.hint-arr{display:inline-block}
+.hint-spark{display:inline-block;width:14px;height:14px;background:currentColor;
+  clip-path:polygon(50% 0,61% 39%,100% 50%,61% 61%,50% 100%,39% 61%,0 50%,39% 39%)}
+.hint-end{align-items:center;gap:8px;margin:14px 0 0 auto;padding:9px 12px 8px;background:var(--red);color:var(--cream);
+  border:2px solid var(--ink);box-shadow:4px 4px 0 var(--ink);rotate:2.5deg;
+  font:800 17px/1 var(--disp);text-transform:uppercase;letter-spacing:.01em}
+.hint-end .hint-spark{color:var(--mustard)}
+@keyframes hint-nudge{0%,68%,100%{translate:0 0}76%{translate:6px 0}84%{translate:0 0}90%{translate:3px 0}}
+@keyframes hint-twinkle{0%,100%{scale:1;rotate:0deg}50%{scale:.55;rotate:45deg}}
+@keyframes hint-sway{0%,60%,100%{translate:0 0}70%{translate:-3px 0}80%{translate:3px 0}90%{translate:0 0}}
+.shelf-hint .shelf-more{position:relative;display:flex;align-items:center;gap:8px;margin:18px 4px 0 auto;padding:9px 13px 8px 26px;
+  background:var(--mustard);color:var(--ink);border:2px solid var(--ink);border-radius:14px 4px 4px 14px;box-shadow:4px 4px 0 var(--ink);
+  rotate:-4deg;transform-origin:14px -18px;transition:rotate .45s cubic-bezier(.3,1.6,.5,1)}
+.shelf-hint.moving .shelf-more{rotate:-10deg}
+.shelf-hint .shelf-more::before{content:"";position:absolute;left:9px;top:50%;width:9px;height:9px;margin-top:-4.5px;border-radius:50%;background:var(--paper);border:2px solid var(--ink)}
+.shelf-hint .shelf-more::after{content:"";position:absolute;left:12.5px;bottom:calc(50% + 4px);width:2px;height:40px;background:var(--ink)}
+.shelf-hint .shelf-more:active{box-shadow:1px 1px 0 var(--ink);translate:3px 3px}
+.hint-n{font:800 25px/.9 var(--disp);letter-spacing:-.01em}
+.hint-t{font:600 10px/1.2 var(--mono);letter-spacing:.06em;text-transform:uppercase;text-align:left}
+.shelf-more .hint-arr{font:800 22px/1 var(--disp);animation:hint-nudge 3.2s ease-in-out infinite}
+.shelf-more .hint-spark{position:absolute;top:-11px;right:-9px;width:16px;height:16px;color:var(--red);animation:hint-twinkle 2.6s ease-in-out infinite}
+/* A touch bigger and bolder than the design's 9px, so it's actually read. */
+.hint-note{position:absolute;right:2px;top:calc(100% + 10px);display:flex;align-items:center;gap:6px;white-space:nowrap;
+  font:600 11px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--ink)}
+.hint-note-arr{display:inline-block;font-size:16px;animation:hint-sway 3.2s ease-in-out infinite}
+.shelf-hint .hint-back{margin-top:16px;padding:7px 10px 6px;background:var(--cream);border:2px solid var(--ink);box-shadow:3px 3px 0 var(--ink);rotate:3deg;
+  font:600 10px/1 var(--mono);letter-spacing:.06em;text-transform:uppercase}
+@media (prefers-reduced-motion:reduce){
+  .shelf-hint *,.shelf-hint *::before,.shelf-hint *::after{animation:none!important;transition:none!important}
+  .shelf-hint.moving .shelf-more{rotate:-4deg}
 }
 @keyframes nudge{0%,100%{transform:translateX(0)}50%{transform:translateX(5px)}}
 .shelf{
