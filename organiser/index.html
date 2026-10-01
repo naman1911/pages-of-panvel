@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Organiser's desk — Pages of Panvel</title>
+<!-- Not linked from anywhere, and only opens for the organiser's account. -->
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#E9E0CB">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='4' fill='%23241D18'/%3E%3Crect x='5' y='17' width='5' height='9' fill='%23C0302A'/%3E%3Crect x='13' y='11' width='5' height='15' fill='%23D89C24'/%3E%3Crect x='21' y='6' width='5' height='20' fill='%23E9E0CB'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anek+Devanagari:wght@500..800&family=Mukta:wght@400;600&family=Martian+Mono:wght@400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="organiser.css">
+</head>
+<body>
+
+<!-- Signed out, or not the organiser: nothing below #desk is ever filled. -->
+<section id="gate" class="gate" hidden>
+  <p class="kick">Pages of Panvel · organiser</p>
+  <h1 class="disp">Organiser's<br>desk</h1>
+  <p id="gate-msg" class="lede">Sign in with the organiser's Google account.</p>
+  <button id="signin" class="btn dark" type="button" hidden>Continue with Google</button>
+  <p><a href="../">← Back to the shelf</a></p>
+</section>
+
+<p id="loading" class="loading">Opening the desk…</p>
+
+<main id="desk" hidden>
+  <header class="top">
+    <div>
+      <p class="kick">Pages of Panvel · organiser's desk</p>
+      <h1 class="disp">The circle,<br><span>at a glance</span></h1>
+    </div>
+    <div class="top-meta">
+      <p id="live" class="live" aria-live="polite"></p>
+      <p id="demo-note" class="demo-note" hidden>Sample data. The real desk shows the real circle.</p>
+      <a class="btn ghost" href="../">← The shelf</a>
+    </div>
+  </header>
+
+  <nav class="jump" aria-label="On this page">
+    <a href="#pulse">This week</a><a href="#trend">30 days</a><a href="#people">People</a>
+    <a href="#nudge">Nudge</a><a href="#books">Books</a><a href="#health">Data health</a>
+  </nav>
+
+  <section id="pulse" aria-labelledby="pulse-h">
+    <h2 id="pulse-h" class="h2">This week</h2>
+    <p class="sub">The last 7 days, against the 7 before.</p>
+    <div id="kpis" class="kpis"></div>
+  </section>
+
+  <section id="trend" aria-labelledby="trend-h">
+    <h2 id="trend-h" class="h2">The last 30 days</h2>
+    <p class="sub">Each bar is one day. Hover or tap a bar for the number.</p>
+    <div class="charts3">
+      <figure class="card"><figcaption><b>Readers checking in</b><small>"I read today", per day</small></figcaption><div id="c-checkins" class="chart"></div></figure>
+      <figure class="card"><figcaption><b>Books added</b><small>new books on the shelf, per day</small></figcaption><div id="c-added" class="chart"></div></figure>
+      <figure class="card"><figcaption><b>Books finished</b><small>"I finished it", per day</small></figcaption><div id="c-finished" class="chart"></div></figure>
+    </div>
+    <div class="charts2">
+      <figure class="card"><figcaption><b>The circle growing</b><small>members, by the day they joined</small></figcaption><div id="c-growth" class="chart tall"></div></figure>
+      <figure class="card"><figcaption><b>Week by week</b><small>books added, last 12 weeks</small></figcaption><div id="c-weeks" class="chart tall"></div></figure>
+    </div>
+  </section>
+
+  <section id="people" aria-labelledby="people-h">
+    <h2 id="people-h" class="h2">Everyone</h2>
+    <p class="sub">"Active" means they checked in, added or finished a book, or posted on the agenda. The site doesn't record plain visits, so someone who only browses looks quiet.</p>
+    <div class="tools">
+      <div id="chips" class="chips" role="group" aria-label="Show"></div>
+      <input id="search" class="search" type="search" placeholder="Find a name" aria-label="Find a name">
+      <button id="csv" class="btn ghost" type="button">Download CSV</button>
+    </div>
+    <div class="table-wrap"><table id="members" class="table"></table></div>
+    <p id="members-empty" class="sub" hidden>Nobody matches that.</p>
+  </section>
+
+  <section id="nudge" aria-labelledby="nudge-h">
+    <h2 id="nudge-h" class="h2">Worth a nudge</h2>
+    <p class="sub">People who might like a WhatsApp hello. "Copy names" puts the list on your clipboard; nothing is sent from here.</p>
+    <div class="charts2">
+      <div class="card"><div class="card-h"><b>Gone quiet</b><small>nothing for 3 weeks or more</small></div><ul id="n-quiet" class="nlist"></ul>
+        <button class="btn ghost small" type="button" data-copy="n-quiet">Copy names</button></div>
+      <div class="card"><div class="card-h"><b>Signed up, never started</b><small>no book, no check-in, no post</small></div><ul id="n-never" class="nlist"></ul>
+        <button class="btn ghost small" type="button" data-copy="n-never">Copy names</button></div>
+    </div>
+  </section>
+
+  <section id="books" aria-labelledby="books-h">
+    <h2 id="books-h" class="h2">The books</h2>
+    <p class="sub">Every public book on the shelf, reading and finished. Private books aren't visible to anyone else, including this page.</p>
+    <div class="charts2">
+      <figure class="card"><figcaption><b>Genres</b><small>books per genre</small></figcaption><div id="c-genres" class="hbars"></div></figure>
+      <figure class="card"><figcaption><b>Languages</b><small>books per language</small></figcaption><div id="c-langs" class="hbars"></div></figure>
+    </div>
+    <div class="charts2">
+      <div class="card"><div class="card-h"><b>Most read</b><small>titles with the most readers</small></div><ol id="top-titles" class="tlist"></ol></div>
+      <div class="card"><div class="card-h"><b>Around the circle</b><small>the rest of the shelf</small></div><dl id="misc" class="misc"></dl></div>
+    </div>
+  </section>
+
+  <section id="health" aria-labelledby="health-h">
+    <h2 id="health-h" class="h2">Data health</h2>
+    <p class="sub">The whole circle lives in one shared record, and the database caps a record at 1 MB. These bars show how close each limit is.</p>
+    <div id="meters" class="meters"></div>
+    <p id="forecast" class="forecast"></p>
+  </section>
+
+  <footer class="foot">Read-only. This page never saves, changes or sends anything.</footer>
+</main>
+
+<div id="tip" class="tip" role="tooltip" hidden></div>
+
+<script type="module" src="organiser.js"></script>
+</body>
+</html>
