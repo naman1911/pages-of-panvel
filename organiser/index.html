@@ -35,6 +35,7 @@
     <div class="top-meta">
       <p id="live" class="live" aria-live="polite"></p>
       <p id="demo-note" class="demo-note" hidden>Sample data. The real desk shows the real circle.</p>
+      <button id="backup" class="btn dark" type="button">Download backup</button>
       <a class="btn ghost" href="../">← The shelf</a>
     </div>
   </header>
@@ -105,6 +106,16 @@
     <p class="sub">The whole circle lives in one shared record, and the database caps a record at 1 MB. These bars show how close each limit is.</p>
     <div id="meters" class="meters"></div>
     <p id="forecast" class="forecast"></p>
+
+    <div class="card backup-card">
+      <div class="card-h"><b>Backups</b><small>a copy of the whole circle, kept by you</small></div>
+      <p>There's no other copy of the circle's data. <b>Download backup</b> saves everything shared on the site to this phone or computer, in one file: every member, book, saved line, streak and agenda post, exactly as stored, with the date and counts. Keep it somewhere safe, like Google Drive. Once a week, say every Sunday, is plenty.</p>
+      <p class="small">If something is ever lost, that file is how it gets put back. Private books live in each person's own record, which only they can read, so they aren't in it. Nothing is uploaded or changed when you download.</p>
+      <div class="backup-row">
+        <button class="btn dark" type="button" data-backup>Download backup</button>
+        <span id="backup-note" class="backup-note" aria-live="polite"></span>
+      </div>
+    </div>
   </section>
 
   <footer class="foot">Read-only. This page never saves, changes or sends anything.</footer>
