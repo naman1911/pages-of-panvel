@@ -212,6 +212,7 @@ function hbars(box, rows) {
 /* ---------- the sections ---------- */
 
 let data = null;
+let raw = null;   // the record exactly as read, for backups
 const view = { status: "all", q: "", sort: "last", dir: -1 };
 
 function kpis(a) {
@@ -422,6 +423,37 @@ function health(a) {
   $("forecast").textContent = `${text} Each book takes about ${Math.round(perBook)} bytes, each member about ${Math.round(perMember)}.`;
 }
 
+/* ---------- backup: the whole shared record, as one file ---------- */
+// Exactly what the page read, untouched, plus when and how much. The
+// fingerprint lets a later restore check the file wasn't altered.
+async function downloadBackup() {
+  if (!raw) return;
+  const note = $("backup-note");
+  const body = JSON.stringify(raw);
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(body));
+  const sha256 = [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+  const now = new Date();
+  const file = {
+    kind: "pages-of-panvel-backup", version: 1,
+    takenAt: now.toISOString(),
+    source: "Firestore circle/public",
+    sample: DEMO || undefined,
+    counts: { members: Object.keys(raw.members || {}).length, books: (raw.books || []).length, agenda: (raw.board || []).length },
+    bytes: docSize(raw), sha256,
+    note: "Everything shared on pagesofpanvel.in. Private books are kept in each member's own record and are not included.",
+    data: raw,
+  };
+  const stamp = now.toLocaleString("sv-SE", { timeZone: "Asia/Kolkata" }).slice(0, 16).replace(" ", "-").replace(":", "");
+  const blob = new Blob([JSON.stringify(file, null, 2)], { type: "application/json" });
+  const a = el("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `pages-of-panvel-backup-${stamp}${DEMO ? "-sample" : ""}.json`;
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  note.textContent = `Saved · ${file.counts.members} members, ${file.counts.books} books, ${file.counts.agenda} posts`;
+}
+document.querySelectorAll("#backup, [data-backup]").forEach((b) => b.addEventListener("click", downloadBackup));
+
 function render() {
   if (!data) return;
   kpis(data); trend(data); people(data); nudge(data); booksSection(data); health(data);
@@ -459,6 +491,7 @@ async function fingerprint(email) {
 
 if (DEMO) {
   const { DEMO_PUBLIC } = await import("../js/demo-data.js");
+  raw = structuredClone(DEMO_PUBLIC);
   data = analyse(DEMO_PUBLIC);
   show("desk");
   $("demo-note").hidden = false;
@@ -475,7 +508,7 @@ if (DEMO) {
   });
   U.onAuthStateChanged(auth, async (user) => {
     if (unsub) { unsub(); unsub = null; }
-    data = null;
+    data = null; raw = null;
     if (!user) {
       $("gate-msg").textContent = "Sign in with the organiser's Google account.";
       $("signin").hidden = false;
@@ -492,7 +525,7 @@ if (DEMO) {
     show("desk");
     live("Connecting…");
     unsub = F.onSnapshot(F.doc(db, "circle", "public"),
-      (snap) => { data = analyse(snap.exists() ? snap.data() : {}); render(); live(`Live · updated ${stamp()}`); },
+      (snap) => { raw = snap.exists() ? snap.data() : {}; data = analyse(raw); render(); live(`Live · updated ${stamp()}`); },
       (e) => live(`Couldn't read the circle${e?.code ? ` (${e.code})` : ""}`));
   });
 }

@@ -142,3 +142,10 @@ section{padding-top:44px;scroll-margin-top:56px}
 .gate .btn{margin:6px 0 18px}
 
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+
+/* backups */
+.backup-card{margin-top:18px;background:var(--cream)}
+.backup-card p{margin:0 0 10px;max-width:70ch}
+.backup-card p.small{font-size:13.5px;color:var(--dim)}
+.backup-row{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-top:6px}
+.backup-note{font:11px var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--green)}
