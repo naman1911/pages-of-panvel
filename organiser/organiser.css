@@ -149,3 +149,19 @@ section{padding-top:44px;scroll-margin-top:56px}
 .backup-card p.small{font-size:13.5px;color:var(--dim)}
 .backup-row{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-top:6px}
 .backup-note{font:11px var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--green)}
+
+/* reader feedback */
+.fb-tools{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
+.fb-grid{display:grid;gap:12px}
+.fb-grid .long .hrow{grid-template-columns:1fr 2.6em;row-gap:3px;margin-bottom:4px}
+.fb-grid .long .hrow .n{grid-column:1/-1;white-space:normal}
+@media (min-width:760px){.fb-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.fb-q{font:800 17px/1.15 var(--disp);margin:0 0 4px}
+.fb-n{font-size:12.5px;color:var(--dim);margin:0 0 10px}
+.fb-avg{font:800 30px/1 var(--disp);margin:0 0 8px}
+.notes{display:grid;gap:8px;margin:0;padding:0;list-style:none}
+.notes li{background:var(--cream);border:1.5px solid var(--hair);padding:9px 11px;font-size:15px}
+.notes .meta{display:block;margin-top:4px;font:10px var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--dim)}
+.setup{background:var(--cream);border:2px solid var(--red);padding:16px}
+.setup code{display:block;margin:8px 0;padding:10px;background:var(--paper-3);font:12px var(--mono);word-break:break-all;white-space:pre-wrap}
+.empty-note{background:var(--cream);border:2px dashed var(--ink);padding:16px;font-size:15px}

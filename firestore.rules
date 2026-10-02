@@ -48,5 +48,58 @@ service cloud.firestore {
     match /allowlist/{email} {
       allow read, write: if false;
     }
+
+    // ── Reader feedback from /quiz ──────────────────────────────────────
+    // GENERATED from quiz/questions.js: regenerate rather than hand-edit.
+    // One document per response, anonymous: no account is needed and none
+    // is recorded. Anyone may add one well-formed response; nobody may
+    // change or delete one; only the organiser may read them. Every answer
+    // must be one of the quiz's own options, and notes are capped at 600
+    // characters, so the collection can't be used to store anything else.
+    function note(a, k) { return !(k in a) || (a[k] is string && a[k].size() <= 600); }
+    function pick(a, k, opts) { return !(k in a) || (a[k] is string && a[k] in opts); }
+    function picks(a, k, opts, n) { return !(k in a) || (a[k] is list && a[k].size() <= n && a[k].hasOnly(opts)); }
+    function score(a, k, lo, hi) { return !(k in a) || (a[k] is int && a[k] >= lo && a[k] <= hi); }
+    function feedbackOk(d) {
+      return d.keys().hasOnly(['v', 'path', 'a', 'at'])
+        && d.v == 1
+        && d.path in ['regular', 'sometimes', 'never']
+        && d.at == request.time
+        && d.a is map
+        && d.a.keys().hasOnly(['rating', 'why', 'whyOther', 'barriers', 'barriersOther', 'time', 'venue', 'venuePref', 'welcome', 'meet', 'away', 'awayOther', 'draw', 'drawOther', 'slots', 'likely', 'more', 'moreOther', 'heard', 'heardOther', 'nps', 'vibe', 'change', 'uncomfortable', 'curator'])
+        && score(d.a, 'rating', 1, 5)
+        && picks(d.a, 'why', ['people', 'time', 'discover', 'talk', 'park', 'ritual', 'swap', 'belong'], 3)
+        && note(d.a, 'whyOther')
+        && picks(d.a, 'barriers', ['busy', 'early', 'far', 'weather', 'alone', 'awkward', 'reading', 'forget', 'format'], 4)
+        && note(d.a, 'barriersOther')
+        && pick(d.a, 'time', ['yes', 'usually', 'sometimes', 'rarely', 'no'])
+        && pick(d.a, 'venue', ['happy', 'neutral', 'unhappy', 'new'])
+        && pick(d.a, 'venuePref', ['one', 'rotate', 'mostly', 'any'])
+        && pick(d.a, 'welcome', ['yes', 'sometimes', 'no'])
+        && pick(d.a, 'meet', ['easy', 'neutral', 'hard'])
+        && picks(d.a, 'away', ['new', 'busy', 'early', 'far', 'weather', 'alone', 'unsure', 'reader', 'solo'], 4)
+        && note(d.a, 'awayOther')
+        && picks(d.a, 'draw', ['friend', 'time', 'closer', 'first', 'know', 'theme', 'nothing'], 3)
+        && note(d.a, 'drawOther')
+        && picks(d.a, 'slots', ['satam', 'satpm', 'sunam', 'sunpm', 'weekday'], 5)
+        && pick(d.a, 'likely', ['no', 'maybe', 'likely', 'yes'])
+        && picks(d.a, 'more', ['silent', 'discuss', 'exchange', 'games', 'workshops', 'social'], 6)
+        && note(d.a, 'moreOther')
+        && pick(d.a, 'heard', ['friend', 'member', 'instagram', 'chatgpt', 'facebook', 'reddit', 'google', 'other'])
+        && note(d.a, 'heardOther')
+        && score(d.a, 'nps', 0, 10)
+        && pick(d.a, 'vibe', ['chai', 'thriller', 'poetry', 'nonfic', 'desi', 'comics'])
+        && note(d.a, 'change')
+        && note(d.a, 'uncomfortable')
+        && note(d.a, 'curator');
+    }
+
+    match /feedback/{id} {
+      allow create: if feedbackOk(request.resource.data);
+      // Replace ORGANISER_UID with your own account ID (the organiser's
+      // desk shows it, with a copy button) before publishing.
+      allow read: if request.auth != null && request.auth.uid == 'ORGANISER_UID';
+      allow update, delete: if false;
+    }
   }
 }

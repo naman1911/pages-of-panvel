@@ -14,6 +14,7 @@
    ?demo runs the desk on the site's sample data, with no sign-in.          */
 
 import { firebaseConfig } from "../js/config.js";
+import { watchFeedback, demoFeedback } from "./feedback.js";
 
 const OWNER = "9cb6340ac3ed2a170ef3fc0bb87d8c393567efa3220a7ef781c9991bac7dc0c5";
 const DEMO = new URLSearchParams(location.search).has("demo");
@@ -497,17 +498,19 @@ if (DEMO) {
   $("demo-note").hidden = false;
   live("Sample data");
   render();
+  demoFeedback();
 } else {
   const [A, U, F] = await Promise.all([import(`${V}/firebase-app.js`), import(`${V}/firebase-auth.js`), import(`${V}/firebase-firestore.js`)]);
   const app = A.initializeApp(firebaseConfig);
   const auth = U.getAuth(app), db = F.getFirestore(app);
-  let unsub = null;
+  let unsub = null, unsubFb = null;
   $("signin").addEventListener("click", async () => {
     try { await U.signInWithPopup(auth, new U.GoogleAuthProvider()); }
     catch (e) { if (e?.code !== "auth/popup-closed-by-user") $("gate-msg").textContent = `Sign-in didn't go through${e?.code ? ` (${e.code})` : ""}. Try again?`; }
   });
   U.onAuthStateChanged(auth, async (user) => {
     if (unsub) { unsub(); unsub = null; }
+    if (unsubFb) { unsubFb(); unsubFb = null; }
     data = null; raw = null;
     if (!user) {
       $("gate-msg").textContent = "Sign in with the organiser's Google account.";
@@ -527,5 +530,6 @@ if (DEMO) {
     unsub = F.onSnapshot(F.doc(db, "circle", "public"),
       (snap) => { raw = snap.exists() ? snap.data() : {}; data = analyse(raw); render(); live(`Live · updated ${stamp()}`); },
       (e) => live(`Couldn't read the circle${e?.code ? ` (${e.code})` : ""}`));
+    unsubFb = watchFeedback(F, db, user.uid);
   });
 }

@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Two minutes, honestly — Pages of Panvel</title>
+<meta name="description" content="A quick, anonymous quiz for Pages of Panvel: why you come, why you don't, and what would make Sundays better.">
+<!-- Shared by link, not through search. -->
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#E9E0CB">
+<meta property="og:title" content="Pages of Panvel · two minutes, honestly">
+<meta property="og:description" content="Anonymous, quick, and it ends with your reader type.">
+<meta property="og:image" content="https://pagesofpanvel.in/img/share.png?v=2">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='4' fill='%23E9E0CB'/%3E%3Crect x='4' y='9' width='7' height='17' fill='%23C0302A'/%3E%3Crect x='12' y='5' width='7' height='21' fill='%23D89C24'/%3E%3Crect x='20' y='11' width='7' height='15' fill='%231F5233'/%3E%3Crect x='2' y='26' width='28' height='3' fill='%23241D18'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anek+Devanagari:wght@500..800&family=Mukta:wght@400;600&family=Martian+Mono:wght@400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="quiz.css">
+</head>
+<body>
+
+<div class="frame">
+  <!-- The progress shelf: one spine per answer. -->
+  <div class="top" id="top" hidden>
+    <button class="back" id="back" type="button" aria-label="Previous question">←</button>
+    <div class="shelf" id="shelf" aria-hidden="true"></div>
+    <span class="count" id="count" aria-live="polite"></span>
+  </div>
+
+  <main id="stage" class="stage" aria-live="polite">
+    <section class="screen intro" id="intro">
+      <p class="kick">Pages of Panvel · वाचक मंडळ</p>
+      <h1 class="disp">Two minutes,<br><span>honestly.</span></h1>
+      <p class="lede">Why you come, why you don't, and what would make Sundays better. Mostly one tap per question.</p>
+      <ul class="promise">
+        <li><b>Anonymous.</b> No name, no email, no sign-in.</li>
+        <li><b>Quick.</b> About two minutes.</li>
+        <li><b>Fun bit at the end.</b> Find out your reader type.</li>
+      </ul>
+      <button class="go" id="start" type="button">Let's go <span aria-hidden="true">→</span></button>
+    </section>
+  </main>
+</div>
+
+<script type="module" src="quiz.js"></script>
+</body>
+</html>
