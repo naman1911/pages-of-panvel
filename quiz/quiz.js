@@ -82,7 +82,8 @@ function screen(cls, dirBack) {
 
 let advanceT = 0;
 function next() { clearTimeout(advanceT); go(at + 1); }
-function soon() { clearTimeout(advanceT); advanceT = setTimeout(next, RM() ? 60 : 520); }
+// A beat to see the choice land (and its stamp) before the next question.
+function soon() { clearTimeout(advanceT); advanceT = setTimeout(next, RM() ? 60 : 850); }
 
 function go(i, dirBack = false, fromHistory = false) {
   const list = flow();
@@ -384,6 +385,7 @@ $("start").onclick = () => { warm()?.catch(() => {}); go(0); };
 $("back").onclick = () => history.back();
 // The phone's back button steps back a question, and never undoes a send.
 addEventListener("popstate", (e) => {
+  clearTimeout(advanceT);   // going back cancels a pending move forward
   if (sent) { history.pushState({ done: true }, ""); return; }
   if (sending) return;
   const i = e.state?.q;
