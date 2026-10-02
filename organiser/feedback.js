@@ -85,7 +85,8 @@ function render() {
     if (!ans.length) continue;
     const card = el("div", "card");
     card.append(el("p", "fb-q", q.q));
-    const who = q.paths.length === 3 ? "everyone" : q.paths.map((p) => SHORT[p].toLowerCase()).join(" & ");
+    let who = q.paths.length === 3 ? "everyone" : q.paths.map((p) => SHORT[p].toLowerCase()).join(" & ");
+    if (q.also) who += ", and anyone the time doesn't suit";
     card.append(el("p", "fb-n", `${ans.length} answered · asked of ${who}${q.type === "multi" ? " · could pick several" : ""}`));
     const bars = el("div", q.type === "scale" || q.type === "nps" ? "hbars" : "hbars long");
     if (q.type === "scale" || q.type === "nps") {
@@ -190,7 +191,8 @@ export function demoFeedback() {
     const path = ["regular", "regular", "sometimes", "sometimes", "never"][i % 5];
     const a = {};
     for (const q of QUESTIONS) {
-      if (q.id === "path" || !q.paths.includes(path) || (!q.required && rnd() < 0.25)) continue;
+      const asked = q.paths.includes(path) || (q.also && Object.entries(q.also).every(([k, v]) => v.includes(a[k])));
+      if (q.id === "path" || !asked || (!q.required && rnd() < 0.25)) continue;
       if (q.type === "single") a[q.id] = any(q.options);
       if (q.type === "multi") a[q.id] = some(q.options, q.max);
       if (q.type === "scale") a[q.id] = 3 + Math.floor(rnd() * 3);

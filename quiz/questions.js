@@ -14,7 +14,9 @@
      scale   1..max, one tap
      nps     0..10, one tap
      text    a short note, skippable
-   `other: true` adds a "something else" box, stored as `<id>Other`.     */
+   `other: true` adds a "something else" box, stored as `<id>Other`.
+   `also: { time: [...] }` asks the question of anyone else too, when their
+   answer to `time` is one of those, right after that question.          */
 
 export const VERSION = 1;
 
@@ -75,7 +77,7 @@ export const QUESTIONS = [
     options: [["friend", "A friend coming with me"], ["time", "A different time"], ["closer", "A venue closer to me"],
       ["first", "A first-timers' session"], ["know", "Knowing what actually happens"], ["theme", "A theme or book I love"],
       ["nothing", "Honestly, nothing right now"]] },
-  { id: "slots", type: "multi", max: 5, paths: ["never"], kicker: "What would change it",
+  { id: "slots", type: "multi", max: 5, paths: ["never"], also: { time: ["rarely", "no"] }, kicker: "What would change it",
     q: "When would suit you best?",
     options: [["satam", "Saturday morning"], ["satpm", "Saturday evening"], ["sunam", "Sunday morning"],
       ["sunpm", "Sunday evening"], ["weekday", "A weekday evening"]] },

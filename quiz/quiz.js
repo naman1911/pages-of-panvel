@@ -26,8 +26,19 @@ const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls)
 const answers = {};
 let path = null, at = -1, sending = false, sent = false, halfShown = false;
 
-// The questions this person will see, in order. The first answer decides.
-const flow = () => QUESTIONS.filter((q) => q.id === "path" || (path && q.paths.includes(path)));
+// The questions this person will see, in order. The first answer decides
+// the path; a few questions also follow up on a particular answer (`also`),
+// and slot in right after the question that prompted them.
+function flow() {
+  const list = QUESTIONS.filter((q) => q.id === "path" || (path && q.paths.includes(path)));
+  for (const q of QUESTIONS) {
+    if (!path || !q.also || list.includes(q)) continue;
+    const [k, vals] = Object.entries(q.also)[0];
+    const after = list.findIndex((x) => x.id === k);
+    if (after >= 0 && vals.includes(answers[k])) list.splice(after + 1, 0, q);
+  }
+  return list;
+}
 const half = () => Math.ceil(flow().length / 2);
 
 /* ---------- Firebase, fetched quietly while they answer ---------- */
