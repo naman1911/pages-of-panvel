@@ -68,7 +68,7 @@ service cloud.firestore {
         && d.a is map
         && d.a.keys().hasOnly(['rating', 'why', 'whyOther', 'barriers', 'barriersOther', 'time', 'venue', 'venuePref', 'welcome', 'meet', 'away', 'awayOther', 'draw', 'drawOther', 'slots', 'likely', 'more', 'moreOther', 'heard', 'heardOther', 'nps', 'vibe', 'change', 'uncomfortable', 'curator'])
         && score(d.a, 'rating', 1, 5)
-        && picks(d.a, 'why', ['people', 'time', 'discover', 'talk', 'park', 'ritual', 'swap', 'belong'], 3)
+        && picks(d.a, 'why', ['people', 'time', 'discover', 'talk', 'park', 'ritual', 'swap', 'library', 'belong'], 3)
         && note(d.a, 'whyOther')
         && picks(d.a, 'barriers', ['busy', 'early', 'far', 'weather', 'alone', 'awkward', 'reading', 'forget', 'format'], 4)
         && note(d.a, 'barriersOther')

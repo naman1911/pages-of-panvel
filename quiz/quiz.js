@@ -10,10 +10,12 @@
 
 import { QUESTIONS, PATHS, PERSONAS, VERSION, TEXT_MAX } from "./questions.js";
 import { firebaseConfig } from "../js/config.js";
+import { doodle, storyCard } from "./art.js";
 
 const DEMO = new URLSearchParams(location.search).has("demo");
 const V = "https://www.gstatic.com/firebasejs/10.12.2";   // same SDK as the site
 const INSTA = "https://www.instagram.com/pagesofpanvel?stkn=ejZuc3VsaTRxdW0=";
+const QUIZ = "https://pagesofpanvel.in/quiz";
 const INKS = ["#FF6B4A", "#FFA62B", "#FFE03D", "#D4E84A", "#9BE04F", "#4FD97E", "#3ED9B0",
   "#35D2D2", "#4BC4F5", "#7FA8FF", "#A87FFF", "#D97FF5", "#FF6FB5", "#FF5C7A"];
 const RM = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -22,10 +24,11 @@ const $ = (id) => document.getElementById(id);
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
 
 const answers = {};
-let path = null, at = -1, sending = false, sent = false;
+let path = null, at = -1, sending = false, sent = false, halfShown = false;
 
 // The questions this person will see, in order. The first answer decides.
 const flow = () => QUESTIONS.filter((q) => q.id === "path" || (path && q.paths.includes(path)));
+const half = () => Math.ceil(flow().length / 2);
 
 /* ---------- Firebase, fetched quietly while they answer ---------- */
 
@@ -51,10 +54,10 @@ function paintTop() {
     const k = shelf.children.length, i = el("i");
     i.style.background = INKS[(k * 5) % INKS.length];
     i.style.height = 22 + ((k * 37) % 19) + "px";
+    if (path && k === half() - 1) i.className = "mark";   // a bookmark at halfway
     shelf.append(i);
   }
   $("count").textContent = `${Math.min(at + 1, list.length)} / ${path ? list.length : "…"}`;
-  $("back").disabled = at <= 0;
 }
 
 /* ---------- screens ---------- */
@@ -68,7 +71,7 @@ function screen(cls, dirBack) {
 
 let advanceT = 0;
 function next() { clearTimeout(advanceT); go(at + 1); }
-function soon() { clearTimeout(advanceT); advanceT = setTimeout(next, RM() ? 60 : 280); }
+function soon() { clearTimeout(advanceT); advanceT = setTimeout(next, RM() ? 60 : 520); }
 
 function go(i, dirBack = false, fromHistory = false) {
   const list = flow();
@@ -77,6 +80,29 @@ function go(i, dirBack = false, fromHistory = false) {
   if (!fromHistory) history.pushState({ q: i }, "");
   ask(list[i], dirBack);
   paintTop();
+  if (path && i === half() && !halfShown) { halfShown = true; toast("Halfway there ✦"); }
+}
+
+function toast(text) {
+  const t = el("div", "toast", text);
+  t.setAttribute("role", "status");
+  document.body.append(t);
+  setTimeout(() => t.remove(), RM() ? 1500 : 2200);
+}
+
+/* A little stamp on the answer just tapped, before moving on. */
+const STAMP = {
+  path: { regular: "A regular!", sometimes: "Welcome back", never: "Hello, new friend" },
+  vibe: "Great taste",
+};
+const NEUTRAL = ["Noted ✓", "Got it", "Thanks!", "Okay!", "Ooh", "✓"];
+function stamp(b, q, v) {
+  if (RM()) return;
+  const lo = q.type === "nps" ? 0 : 1, hi = q.type === "nps" ? 10 : q.max;
+  const word = typeof STAMP[q.id] === "object" ? STAMP[q.id][v]
+    : STAMP[q.id] || (q.type === "scale" || q.type === "nps" ? (v >= hi - 1 ? "♥" : v <= lo + 1 ? "Noted" : "✓") : NEUTRAL[(at + q.options.findIndex((o) => o[0] === v)) % NEUTRAL.length]);
+  b.querySelector(".stamp")?.remove();
+  b.append(el("span", "stamp", word));
 }
 
 const introNode = $("intro");
@@ -89,8 +115,12 @@ function ask(q, dirBack) {
   const s = screen("ask", dirBack);
   const last = flow().indexOf(q) === flow().length - 1 && q.id !== "path";
   const label = (filled) => (last ? "Send it ✦" : filled ? "Next →" : "Skip →");
-  s.append(el("p", "kick", q.kicker || "Pages of Panvel"), el("h2", "q", q.q));
+  s.append(el("p", "kick" + (last ? " last" : ""), last ? "Last one ✦" : q.kicker || "Pages of Panvel"), el("h2", "q", q.q));
   const nav = el("div", "nav");
+  const backBtn = el("button", "prev", "← Back");
+  backBtn.type = "button";
+  backBtn.onclick = () => history.back();
+  nav.append(backBtn);
   const nextBtn = el("button", "go", label(true));
   nextBtn.type = "button";
   nextBtn.onclick = next;
@@ -112,6 +142,7 @@ function ask(q, dirBack) {
         opts.querySelectorAll(".opt").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
         nextBtn.disabled = false;
         paintTop();
+        if (v !== "other") stamp(b, q, v);
         if (otherBox) {
           otherBox.hidden = v !== "other";
           if (v === "other") { otherBox.querySelector("input").focus(); return; }
@@ -175,6 +206,8 @@ function ask(q, dirBack) {
       b.onclick = () => {
         answers[q.id] = v;
         row.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+        row.querySelectorAll(".stamp").forEach((x) => x.remove());
+        stamp(b, q, v);
         soon();
       };
       row.append(b);
@@ -274,8 +307,36 @@ function done() {
   const s = screen("done");
   s.append(el("p", "kick", DEMO ? "Test mode · nothing was sent" : "Sent · thank you"));
   const card = el("div", "persona");
-  card.append(el("small", null, "Your reader type"), el("h2", null, name), el("p", null, line));
+  const art = el("div", "art");
+  art.innerHTML = doodle(answers.vibe);   // our own fixed drawing, no user text
+  card.append(art, el("small", null, "Your reader type"), el("h2", null, name), el("p", null, line));
   s.append(card);
+
+  // Their reader type as a story-sized picture, drawn now so Share is instant.
+  const pic = storyCard(answers.vibe, name, line).catch(() => null);
+  const share = el("button", "go share", "Share my reader type ✦");
+  share.type = "button";
+  share.onclick = async () => {
+    const blob = await pic;
+    if (!blob) { share.textContent = "Couldn't draw it, sorry"; return; }
+    const file = new File([blob], "my-reader-type.png", { type: "image/png" });
+    try {
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], text: `I'm ${name}. What's your reader type? ${QUIZ}` });
+        return;
+      }
+    } catch (e) { if (e?.name === "AbortError") return; }
+    const a = el("a"); a.href = URL.createObjectURL(blob); a.download = file.name;
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    share.textContent = "Saved ✓ Post it on your story";
+  };
+  const wa = el("a", "pass", "Send the quiz to a friend →");
+  wa.href = "https://wa.me/?text=" + encodeURIComponent(`Two minutes, honestly: the Pages of Panvel quiz. Find out your reader type → ${QUIZ}`);
+  wa.target = "_blank"; wa.rel = "noopener";
+  const row = el("div", "share-row");
+  row.append(share, wa);
+  s.append(row);
   const tail = { regular: "See you Sunday, 8:30am in the park.", sometimes: "Come say hi again soon. Sunday, 8:30am, the park.",
     never: "Your first Sunday is waiting: 8:30am, the park. Bring any book." }[path];
   s.append(el("p", "thanks", `Thank you. Every answer gets read, and it shapes what Pages of Panvel does next. ${tail}`));
@@ -288,7 +349,7 @@ function done() {
   const m = el("a", null, "pagesofpanvel1@gmail.com"); m.href = "mailto:pagesofpanvel1@gmail.com";
   mail.append(m);
   s.append(mail);
-  if (!RM()) confetti(card);
+  if (!RM()) setTimeout(() => confetti(card), 450);
 }
 
 function confetti(from) {
