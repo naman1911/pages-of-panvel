@@ -189,6 +189,13 @@ a.btn:hover{color:var(--cream)}
 .find-row .btn{min-height:44px;padding:6px 10px;line-height:1.35}
 .find-row .big-btn{font-size:16px;min-height:52px;padding:6px 10px;line-height:1.1}
 .find-row .big-btn.outline{margin-top:0}
+/* The WhatsApp channel: one wide button, in the logo's green. */
+.btn.wa{margin-top:12px;min-height:60px;padding:10px 16px;gap:14px;justify-content:flex-start;text-align:left;
+  background:var(--green);color:var(--cream);letter-spacing:0}
+.btn.wa:hover{background:var(--ink)}
+.btn.wa .ico{width:26px;height:26px}
+.btn.wa b{display:block;font:700 17px/1.15 var(--disp);letter-spacing:-.01em}
+.btn.wa small{display:block;margin-top:3px;font-family:var(--body);font-size:12.5px;line-height:1.3;opacity:.86}
 .find-label{margin:22px 0 0;font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
 
 /* ── the shelf ────────────────────────────────────────────── */
