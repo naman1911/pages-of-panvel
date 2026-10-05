@@ -125,7 +125,7 @@ if (!DEMO) {
 
 const EMPTY = { members: {}, books: [], board: [] };
 let state = { pub: EMPTY, priv: { books: [] }, user: null, busy: false };
-let filters = { genre: null, lang: null, lendable: false, mine: false };
+let filters = { genre: null, lang: null, lendable: false, mine: false, status: null };
 let tab = "shelf";
 // The book just marked finished, so its "Brag about it" button can light up
 // for a moment. Cleared on a timer; it only ever changes how a button looks.
@@ -413,6 +413,8 @@ function renderFilters() {
   box.innerHTML = "";
   box.appendChild(btn("Only my matches", filters.mine, () => filters.mine = !filters.mine));
   box.appendChild(btn("Up for grabs", filters.lendable, () => filters.lendable = !filters.lendable));
+  box.appendChild(btn("Reading now", filters.status === "reading", () => filters.status = filters.status === "reading" ? null : "reading"));
+  box.appendChild(btn("Finished", filters.status === "finished", () => filters.status = filters.status === "finished" ? null : "finished"));
   genres.forEach((g) => box.appendChild(
     btn(g, filters.genre === g, () => filters.genre = filters.genre === g ? null : g)));
   langs.filter((l) => l !== "English").forEach((l) => box.appendChild(
@@ -422,7 +424,12 @@ function renderFilters() {
 function renderWall() {
   const counts = titleCounts();
   const twinTitles = new Set(myTwins().map((t) => norm(t.book.title)));
-  let books = [...state.pub.books].sort((a, b) => (b.startedAt || "").localeCompare(a.startedAt || ""));
+  // Latest activity first: a book's moment is the day it was finished, or
+  // else the day it went up. Same day, the one added later comes first.
+  const latest = (b) => (b.finishedAt && b.finishedAt > (b.startedAt || "") ? b.finishedAt : b.startedAt || "");
+  let books = state.pub.books.map((b, i) => ({ b, i, at: latest(b) }))
+    .sort((x, y) => y.at.localeCompare(x.at) || y.i - x.i).map((x) => x.b);
+  if (filters.status) books = books.filter((b) => b.status === filters.status);
   if (filters.genre) books = books.filter((b) => b.genre === filters.genre);
   if (filters.lang) books = books.filter((b) => b.lang === filters.lang);
   if (filters.lendable) books = books.filter((b) => b.lendable);
