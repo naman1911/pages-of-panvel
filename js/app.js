@@ -324,6 +324,8 @@ function renderAll() {
   startCovers();
 }
 
+// Plenty for any real circle; only there so a runaway shelf can't slow the page.
+const SHELF_MAX = 600;
 function renderHero() {
   const reading = state.pub.books.filter((b) => b.status === "reading");
   const people = Object.keys(state.pub.members).length;
@@ -335,7 +337,11 @@ function renderHero() {
   const twinTitles = new Set(myTwins().map((t) => norm(t.book.title)));
   const shelf = $("shelf");
   shelf.innerHTML = "";
-  reading.slice(0, 120).forEach((b) => {
+  // Newest first, so a book someone just added is the first spine on the
+  // shelf, not the last one at the far end of a long sideways scroll. (It
+  // also used to stop at the first 120, which would have hidden every book
+  // added after that.)
+  reading.slice().reverse().slice(0, SHELF_MAX).forEach((b) => {
     const s = document.createElement("button");
     s.className = "spine" + (twinTitles.has(norm(b.title)) ? " match" : "");
     s.style.background = inkFor(b.title);
