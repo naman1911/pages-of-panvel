@@ -1,20 +1,24 @@
-/* Organiser's desk: the whole circle at a glance, for the organiser only.
+/* Organiser's desk: the whole circle at a glance, for the organisers only.
 
-   READ-ONLY. It signs in with the same Google sign-in as the site and opens
-   one live read of circle/public, the record every member's phone already
-   reads to draw the shelf. It never writes, never creates a member entry,
-   and never signs anyone out. Private books stay private: the database
-   rules don't let anyone else read them, this page included.
+   READ-ONLY for the circle. It signs in with the same Google sign-in as the
+   site and opens one live read of circle/public, the record every member's
+   phone already reads to draw the shelf. It never writes to it, never
+   creates a member entry, and never signs anyone out. Private books stay
+   private: the database rules don't let anyone else read them, this page
+   included. The one thing it can change is who else has organiser access
+   (access.js), and only the owner can do that.
 
-   Who gets in: the page compares a SHA-256 fingerprint of the signed-in,
-   verified Google email with OWNER below, so the address itself isn't
-   published in the site's code. Anyone else sees a polite "not for you"
-   and the page reads nothing.
+   Who gets in: the owner, found by comparing a SHA-256 fingerprint of the
+   signed-in, verified Google email with OWNER below, so the address itself
+   isn't published in the site's code; and co-organisers, whose email the
+   owner has added (the database lets each one see their own entry). Anyone
+   else sees a polite "not for you" and the page reads nothing.
 
    ?demo runs the desk on the site's sample data, with no sign-in.          */
 
 import { firebaseConfig } from "../js/config.js";
 import { watchFeedback, demoFeedback } from "./feedback.js";
+import { startAccess } from "./access.js";
 
 const OWNER = "9cb6340ac3ed2a170ef3fc0bb87d8c393567efa3220a7ef781c9991bac7dc0c5";
 const DEMO = new URLSearchParams(location.search).has("demo");
@@ -499,11 +503,12 @@ if (DEMO) {
   live("Sample data");
   render();
   demoFeedback();
+  startAccess({ role: "demo", me: "" });
 } else {
   const [A, U, F] = await Promise.all([import(`${V}/firebase-app.js`), import(`${V}/firebase-auth.js`), import(`${V}/firebase-firestore.js`)]);
   const app = A.initializeApp(firebaseConfig);
   const auth = U.getAuth(app), db = F.getFirestore(app);
-  let unsub = null, unsubFb = null;
+  let unsub = null, unsubFb = null, unsubAccess = null;
   $("signin").addEventListener("click", async () => {
     try { await U.signInWithPopup(auth, new U.GoogleAuthProvider()); }
     catch (e) { if (e?.code !== "auth/popup-closed-by-user") $("gate-msg").textContent = `Sign-in didn't go through${e?.code ? ` (${e.code})` : ""}. Try again?`; }
@@ -511,6 +516,7 @@ if (DEMO) {
   U.onAuthStateChanged(auth, async (user) => {
     if (unsub) { unsub(); unsub = null; }
     if (unsubFb) { unsubFb(); unsubFb = null; }
+    if (unsubAccess) { unsubAccess(); unsubAccess = null; }
     data = null; raw = null;
     if (!user) {
       $("gate-msg").textContent = "Sign in with the organiser's Google account.";
@@ -518,9 +524,16 @@ if (DEMO) {
       show("gate");
       return;
     }
-    const ok = user.emailVerified && (await fingerprint(user.email)) === OWNER;
-    if (!ok) {
-      $("gate-msg").textContent = "This page is only for the circle's organiser. Nothing here for you, but the shelf is always open.";
+    // The owner, or someone the owner has given access to.
+    const email = String(user.email || "").trim().toLowerCase();
+    let role = null;
+    if (user.emailVerified && (await fingerprint(email)) === OWNER) role = "owner";
+    else if (user.emailVerified && email) {
+      try { if ((await F.getDoc(F.doc(db, "organisers", email))).exists()) role = "co"; }
+      catch { /* not allowed to look, or offline: not an organiser */ }
+    }
+    if (!role) {
+      $("gate-msg").textContent = "This page is only for the circle's organisers. Nothing here for you, but the shelf is always open.";
       $("signin").hidden = true;
       show("gate");
       return;
@@ -530,6 +543,7 @@ if (DEMO) {
     unsub = F.onSnapshot(F.doc(db, "circle", "public"),
       (snap) => { raw = snap.exists() ? snap.data() : {}; data = analyse(raw); render(); live(`Live · updated ${stamp()}`); },
       (e) => live(`Couldn't read the circle${e?.code ? ` (${e.code})` : ""}`));
-    unsubFb = watchFeedback(F, db, user.uid);
+    unsubFb = watchFeedback(F, db, user.uid, role);
+    unsubAccess = startAccess({ role, me: user.email, F, db });
   });
 }

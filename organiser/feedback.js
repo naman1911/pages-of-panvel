@@ -11,7 +11,7 @@ const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls)
 const box = () => document.getElementById("fb");
 const SHORT = { regular: "Comes often", sometimes: "Comes sometimes", never: "Not yet" };
 const view = { path: "all" };
-let rows = [], uidForSetup = "";
+let rows = [], uidForSetup = "", roleForSetup = "owner";
 
 function hbars(target, list) {
   const max = Math.max(1, ...list.map((r) => r.n));
@@ -154,6 +154,12 @@ function download(list) {
 
 function setup(code) {
   const root = box();
+  if (roleForSetup === "co") {
+    root.replaceChildren(el("div", "setup", code === "permission-denied"
+      ? "Reader feedback isn't open to co-organisers yet. The circle's owner needs to publish the updated database rules; then it appears here by itself."
+      : "The answers couldn't be read just now. Try again in a bit."));
+    return;
+  }
   const s = el("div", "setup");
   s.append(el("b", null, "One step left before answers show here."));
   s.append(el("p", null, code === "permission-denied"
@@ -168,8 +174,9 @@ function setup(code) {
 }
 
 // Live mode: called once the organiser is signed in and verified.
-export function watchFeedback(F, db, uid) {
+export function watchFeedback(F, db, uid, role = "owner") {
   uidForSetup = uid;
+  roleForSetup = role;
   return F.onSnapshot(F.collection(db, "feedback"),
     (snap) => {
       rows = snap.docs.map((d) => { const x = d.data(); return { id: d.id, path: x.path, a: x.a || {}, at: x.at?.toDate ? x.at.toDate() : null }; })

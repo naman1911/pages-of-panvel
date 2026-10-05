@@ -165,3 +165,20 @@ section{padding-top:44px;scroll-margin-top:56px}
 .setup{background:var(--cream);border:2px solid var(--red);padding:16px}
 .setup code{display:block;margin:8px 0;padding:10px;background:var(--paper-3);font:12px var(--mono);word-break:break-all;white-space:pre-wrap}
 .empty-note{background:var(--cream);border:2px dashed var(--ink);padding:16px;font-size:15px}
+
+/* organiser access */
+.access-form{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.access-form .search{max-width:340px;flex:1 1 220px}
+.access-form .btn{box-shadow:4px 4px 0 var(--green)}
+.access-msg{margin:12px 0 0;min-height:1.4em;font-size:14.5px;max-width:68ch}
+.access-msg.err{color:var(--red-dk);font-weight:600}
+.access-msg.ok{color:var(--green);font-weight:600}
+.access-list{list-style:none;margin:16px 0 0;padding:0;border:2px solid var(--ink);background:var(--paper-2);max-width:640px}
+.access-list li{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;padding:10px 14px;border-top:1px solid var(--hair)}
+.access-list li:first-child{border-top:0}
+.access-list .who{font-weight:600;font-size:15px;overflow-wrap:anywhere;flex:1 1 100%}
+.access-list .btn.small,.access-list .tag{margin-left:auto}
+.access-list .meta{font:11px var(--mono);color:var(--dim)}
+.access-list .tag{font:10px var(--mono);letter-spacing:.08em;text-transform:uppercase;background:var(--ink);color:var(--cream);padding:3px 8px}
+.access-list .btn.small{margin-top:0;min-height:32px}
+.access-list .none{color:var(--dim);font-size:14px}
