@@ -26,6 +26,23 @@ service cloud.firestore {
         && request.resource.data.board.size() <= 40;
     }
 
+    // ── Organisers ──────────────────────────────────────────────────────
+    // The owner: the one account that can give or take back organiser
+    // access. Replace ORGANISER_UID with your own account ID (the
+    // organiser's desk shows it, with a copy button) before publishing.
+    function isOwner() {
+      return request.auth != null && request.auth.uid == 'ORGANISER_UID';
+    }
+    // Co-organisers: verified Google accounts the owner has added to
+    // /organisers, one document per email address (lower case).
+    function isCoOrganiser() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/organisers/$(request.auth.token.email.lower()));
+    }
+    function isOrganiser() {
+      return isOwner() || isCoOrganiser();
+    }
+
     // Everything the circle shares lives in one document, so a page load
     // costs one read instead of one per book.
     match /circle/public {
@@ -47,6 +64,22 @@ service cloud.firestore {
     // still here if the circle is ever closed again.
     match /allowlist/{email} {
       allow read, write: if false;
+    }
+
+    // Who else may open the organiser's desk. Only the owner can add or
+    // remove anyone; a co-organiser can see their own entry (that's how the
+    // desk knows to open for them) and nothing else here.
+    match /organisers/{email} {
+      allow get: if isOwner()
+        || (signedIn() && request.auth.token.email.lower() == email);
+      allow list: if isOwner();
+      allow create: if isOwner()
+        && email == email.lower()
+        && email.matches('^[^@ ]+@[^@ ]+[.][^@ ]+$')
+        && request.resource.data.keys().hasOnly(['added'])
+        && request.resource.data.added == request.time;
+      allow delete: if isOwner();
+      allow update: if false;
     }
 
     // ── Reader feedback from /quiz ──────────────────────────────────────
@@ -96,9 +129,8 @@ service cloud.firestore {
 
     match /feedback/{id} {
       allow create: if feedbackOk(request.resource.data);
-      // Replace ORGANISER_UID with your own account ID (the organiser's
-      // desk shows it, with a copy button) before publishing.
-      allow read: if request.auth != null && request.auth.uid == 'ORGANISER_UID';
+      // The owner and any co-organiser (see isOrganiser above).
+      allow read: if isOrganiser();
       allow update, delete: if false;
     }
   }
