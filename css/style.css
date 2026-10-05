@@ -369,6 +369,12 @@ a.wa:hover .wa-go{transform:translateX(4px)}
   font-family:var(--mono);font-size:10px;letter-spacing:.07em;text-transform:uppercase;
   color:var(--dim);margin-top:6px;line-height:1.6;word-break:break-word;overflow-wrap:anywhere;
 }
+/* Everyone & everything: the writer in bold, and whoever put the book up
+   picked out with a highlighter stroke (a green one on your own books). */
+.meta .by{font-family:var(--body);font-weight:600;font-size:15px;letter-spacing:0;text-transform:none;color:var(--ink)}
+.meta .who{color:var(--ink);padding:1px 6px;border-radius:2px;background:rgba(216,156,36,.38);
+  -webkit-box-decoration-break:clone;box-decoration-break:clone}
+.meta .who.me{background:rgba(31,82,51,.16)}
 .line{
   font-size:16px;font-style:italic;color:var(--ink);margin-top:10px;padding-left:12px;
   box-shadow:inset 3px 0 0 var(--green);word-break:break-word;overflow-wrap:anywhere;

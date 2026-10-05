@@ -436,7 +436,7 @@ function renderWall() {
       ${chip(b)}
       <div class="body">
         <div class="title">${esc(b.title)}</div>
-        <div class="meta">${b.author ? esc(b.author) + " — " : ""}${esc(readerName(b.uid))}${b.uid === state.user.uid ? " (you)" : ""}</div>
+        <div class="meta">${b.author ? `<b class="by">${esc(b.author)}</b> — ` : ""}<span class="who${b.uid === state.user.uid ? " me" : ""}">${esc(readerName(b.uid))}${b.uid === state.user.uid ? " (you)" : ""}</span></div>
         <div>${bookTags(b, counts)}</div>
         ${b.line ? `<div class="line">${esc(b.line)}</div>` : ""}
       </div>
