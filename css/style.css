@@ -395,6 +395,10 @@ a.wa:hover .wa-go{transform:translateX(4px)}
 .btn.ghost.nudge{background:var(--mustard);color:var(--ink);box-shadow:none;animation:nudge .7s ease 2.4s 3}
 @keyframes nudge{50%{transform:scale(1.1)}}
 .editor{display:grid;gap:8px;margin-top:10px;padding:12px;background:var(--paper-3);border-left:3px solid var(--green)}
+/* Editing a book's title and author (Mine): inputs lifted off the well. */
+.editor.details{border-left-color:var(--mustard)}
+.editor.details input[type=text]{background:var(--cream)}
+.editor.details .acts{margin-top:4px}
 
 /* Agenda posts: app.js emits .entry > .body > div (no class) + .meta */
 .board .body>div:first-child{

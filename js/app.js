@@ -130,6 +130,10 @@ let tab = "shelf";
 // The book just marked finished, so its "Brag about it" button can light up
 // for a moment. Cleared on a timer; it only ever changes how a button looks.
 let justFinished = null;
+// The book whose title and author are being edited in Mine, with what has
+// been typed so far, so a re-render (anyone's change arrives live) doesn't
+// close the editor or lose the typing.
+let editing = null;
 
 // A transaction that never settles — the connection drops mid-write — used to
 // leave state.busy stuck true, because the reset sat after the try/catch instead
@@ -487,9 +491,21 @@ function renderMine() {
           ${b.status === "finished" && !b.isPrivate ? `<button class="btn ghost${b.id === justFinished ? " nudge" : ""}" data-act="brag" data-id="${esc(b.id)}">Brag about it ✦</button>` : ""}
           ${b.status === "reading" ? `<button class="btn ghost" data-act="finish" data-id="${esc(b.id)}" data-p="${b.isPrivate ? 1 : 0}">I finished it</button>` : ""}
           <button class="btn ghost" data-act="line" data-id="${esc(b.id)}" data-p="${b.isPrivate ? 1 : 0}">${b.line ? "Change the line" : "Save a line you liked"}</button>
+          <button class="btn ghost" data-act="details" data-id="${esc(b.id)}">Edit details</button>
           ${b.isPrivate ? "" : `<button class="btn ghost" data-act="lend" data-id="${esc(b.id)}">${b.lendable ? "Keeping it" : "Happy to lend it"}</button>`}
           <button class="btn ghost" data-act="remove" data-id="${esc(b.id)}" data-p="${b.isPrivate ? 1 : 0}">Remove</button>
         </div>
+        ${editing?.id === b.id ? `
+        <div class="editor details">
+          <label class="field"><span>title</span>
+            <input type="text" id="et-${esc(b.id)}" data-edit="title" maxlength="120" autocomplete="off" value="${esc(editing.title)}"></label>
+          <label class="field"><span>author</span>
+            <input type="text" id="ea-${esc(b.id)}" data-edit="author" maxlength="80" autocomplete="off" value="${esc(editing.author)}"></label>
+          <div class="acts">
+            <button class="btn" data-act="details-save" data-id="${esc(b.id)}" data-p="${b.isPrivate ? 1 : 0}">Save changes</button>
+            <button class="btn ghost" data-act="details-cancel" data-id="${esc(b.id)}">Cancel</button>
+          </div>
+        </div>` : ""}
         <div class="editor" id="ed-${esc(b.id)}" hidden>
           <textarea class="field" id="ta-${esc(b.id)}" rows="2" maxlength="300"
             placeholder="One sentence that stuck with you">${esc(b.line || "")}</textarea>
@@ -498,6 +514,12 @@ function renderMine() {
       </div>
     </div>`;
   }).join("");
+  // Put the cursor back where it was if a re-render rebuilt the editor.
+  if (editing) {
+    const f = $((editing.focus === "author" ? "ea-" : "et-") + editing.id);
+    if (f && editing.focused) { f.focus({ preventScroll: true }); f.setSelectionRange(f.value.length, f.value.length); }
+    if (!books.some((x) => x.id === editing.id)) editing = null;   // removed elsewhere
+  }
 }
 
 function renderStandings() {
@@ -667,10 +689,48 @@ $("my-books").addEventListener("click", async (e) => {
     await patch({ line: $("ta-" + id).value.trim().slice(0, 300) });
     party("Saved.");
   }
+  if (act === "details") {
+    const cur = allMine().find((x) => x.id === id);
+    if (!cur) return;
+    editing = editing?.id === id ? null : { id, title: cur.title || "", author: cur.author || "", focus: "title", focused: true };
+    renderMine();
+  }
+  if (act === "details-cancel") { editing = null; renderMine(); }
+  if (act === "details-save") {
+    const title = String(editing?.title || "").trim().slice(0, 120);
+    const author = String(editing?.author || "").trim().slice(0, 80);
+    if (!title) { showError("A book needs a title."); $("et-" + id)?.focus(); return; }
+    if (state.busy) { showError("Still saving the last change. Give it a second."); return; }   // keep the typing
+    editing = null;
+    // Only ever your own book: private ones live in your own record, and a
+    // public one has to carry your account as well as this id.
+    if (isPriv) await mutatePrivate((p) => { p.books = p.books.map((x) => x.id === id ? { ...x, title, author } : x); return p; });
+    else await mutate((c) => { c.books = c.books.map((x) => x.id === id && x.uid === state.user.uid ? { ...x, title, author } : x); return c; });
+    party("Updated.");
+  }
   if (act === "remove") {
     if (!confirm("Take this off your shelf?")) return;
     if (isPriv) await mutatePrivate((p) => { p.books = p.books.filter((x) => x.id !== id); return p; });
     else await mutate((c) => { c.books = c.books.filter((x) => x.id !== id); return c; });
+  }
+});
+
+// Typing in the title/author editor: keep it in `editing` as you go.
+$("my-books").addEventListener("input", (e) => {
+  const k = e.target.dataset?.edit;
+  if (k && editing) editing[k] = e.target.value;
+});
+$("my-books").addEventListener("focusin", (e) => {
+  const k = e.target.dataset?.edit;
+  if (k && editing) { editing.focus = k; editing.focused = true; }
+});
+$("my-books").addEventListener("focusout", (e) => {
+  if (e.target.dataset?.edit && editing) editing.focused = false;
+});
+$("my-books").addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && e.target.dataset?.edit) {
+    e.preventDefault();
+    e.target.closest(".editor")?.querySelector('[data-act="details-save"]')?.click();
   }
 });
 
