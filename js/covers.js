@@ -1,4 +1,5 @@
-/* Book covers from Open Library (openlibrary.org): free, no account, no key.
+/* Book covers from Open Library (openlibrary.org), and from Google Books
+   when Open Library has nothing for a book. Both are free.
 
    app.js draws every book with its coloured chip, as it always has. A book
    that could have a cover also carries data-cover on its chip. This file
@@ -6,20 +7,25 @@
    and swaps a chip for the cover once one is found. Answers go into app.js's
    COVERS map, so the next render draws the cover straight away.
 
-   It fails quietly and completely: no match, a slow or broken Open Library,
-   an image that won't load, all leave the chip exactly as it was. After a
-   few failed lookups in a row it stops asking for the rest of the visit.
+   It fails quietly and completely: no match, a slow or broken service, an
+   image that won't load, all leave the chip exactly as it was. After a few
+   failed lookups in a row it stops asking that service for the rest of the
+   visit. Answers are remembered on the phone (a found cover for 60 days, a
+   miss for 14), so the shelf doesn't ask again on every visit.
 
    It is careful about what it matches. A wrong cover is worse than none, so
    a cover is used only when the title's words agree and the author's
    surname does too. What gets sent is a book's title and author, and only for public
    books: app.js never marks a private one.                                  */
 
+import { firebaseConfig } from './config.js';
+
 const SEARCH = 'https://openlibrary.org/search.json';
 const COVER = (id) => `https://covers.openlibrary.org/b/id/${id}-M.jpg`;
+const GOOGLE = 'https://www.googleapis.com/books/v1/volumes';
 const PARALLEL = 2, TIMEOUT = 8000, GIVE_UP_AFTER = 4;
 
-let cache = null, running = 0, failures = 0, stopped = false;
+let cache = null, running = 0;
 const queue = [], asked = new Set();
 
 // Latin only, accents folded, a leading article dropped, punctuation gone.
@@ -43,33 +49,100 @@ function sameTitle(a, b) {
   return short.every((w) => have.has(w));
 }
 
-function pick(docs, title, author) {
+// Candidates from either service come in as { titles, authors, url }.
+function pick(found, title, author) {
   const t = n(title), sn = surname(author), mine = n(author);
-  for (const d of docs || []) {
-    if (!d.cover_i || !sameTitle(t, n(d.title))) continue;
-    const names = (d.author_name || []).map(n).filter(Boolean);
-    const agree = (x) => (sn.length > 1 && x.split(' ').includes(sn)) ||
-      (surname(x).length > 1 && mine.split(' ').includes(surname(x)));
-    if (names.some(agree)) {
-      return COVER(d.cover_i);
-    }
+  const agree = (x) => (sn.length > 1 && x.split(' ').includes(sn)) ||
+    (surname(x).length > 1 && mine.split(' ').includes(surname(x)));
+  for (const c of found) {
+    if (!c.url || !c.titles.some((x) => sameTitle(t, n(x)))) continue;
+    if (c.authors.map(n).filter(Boolean).some(agree)) return c.url;
   }
   return '';
 }
 
-async function lookup(title, author) {
+async function get(url, ownReferrer = false) {
   const ctl = new AbortController();
   const timer = setTimeout(() => ctl.abort(), TIMEOUT);
   try {
-    // Only the surname goes in the search. A misspelt first name ("Mich
-    // Albom") or initials ("J.R.R.") otherwise make it come back empty.
-    const q = new URLSearchParams({ title, author: surname(author), limit: '10', fields: 'cover_i,title,author_name' });
-    const r = await fetch(`${SEARCH}?${q}`, { signal: ctl.signal, credentials: 'omit', referrerPolicy: 'no-referrer' });
-    if (!r.ok) throw new Error(String(r.status));
-    return pick((await r.json()).docs, title, author);
+    return await fetch(url, { signal: ctl.signal, credentials: 'omit', referrerPolicy: ownReferrer ? 'origin' : 'no-referrer' });
   } finally {
     clearTimeout(timer);
   }
+}
+
+// Only the surname goes in a search. A misspelt first name ("Mich Albom") or
+// initials ("J.R.R.") otherwise make it come back empty.
+async function openLibrary(title, author) {
+  const q = new URLSearchParams({ title, author: surname(author), limit: '10', fields: 'cover_i,title,author_name' });
+  const r = await get(`${SEARCH}?${q}`);
+  if (!r.ok) throw new Error(String(r.status));
+  return pick(((await r.json()).docs || []).map((d) => ({
+    titles: [d.title], authors: d.author_name || [], url: d.cover_i ? COVER(d.cover_i) : '',
+  })), title, author);
+}
+
+// Google Books answers far more reliably with a key: it uses the project's
+// own (the Firebase web key, public like the rest of config.js) once the
+// Books API is switched on for it. Until then, or if it's refused, it asks
+// without one. The key is checked against the site's address, so the origin
+// goes with keyed requests; nothing else does.
+let googleKey = firebaseConfig?.apiKey || '';
+async function googleBooks(title, author) {
+  const q = new URLSearchParams({
+    q: `${title} inauthor:${surname(author) || author}`, printType: 'books', maxResults: '10',
+    fields: 'items(volumeInfo(title,subtitle,authors,imageLinks/thumbnail))',
+  });
+  let r = googleKey ? await get(`${GOOGLE}?${q}&key=${encodeURIComponent(googleKey)}`, true) : null;
+  if (!r || r.status === 400 || r.status === 403) { googleKey = ''; r = await get(`${GOOGLE}?${q}`); }
+  if (!r.ok) throw new Error(String(r.status));
+  return pick(((await r.json()).items || []).map(({ volumeInfo: v = {} }) => ({
+    titles: [v.title, v.subtitle ? `${v.title} ${v.subtitle}` : ''].filter(Boolean),
+    authors: v.authors || [],
+    // Google hands out http:// links with a page-curl drawn on; ask for neither.
+    url: (v.imageLinks?.thumbnail || '').replace(/^http:/, 'https:').replace(/&edge=curl/, ''),
+  })), title, author);
+}
+
+// Open Library first; Google Books only when Open Library found nothing.
+const SOURCES = [{ find: openLibrary, fails: 0, off: false }, { find: googleBooks, fails: 0, off: false }];
+const stopped = () => SOURCES.every((s) => s.off);
+
+// { url, sure }: sure means every service answered, so a miss is a real miss
+// and worth remembering; one that errored or gave up means try another day.
+async function lookup(title, author) {
+  let sure = true;
+  for (const s of SOURCES) {
+    if (s.off) { sure = false; continue; }
+    try {
+      const url = await s.find(title, author);
+      s.fails = 0;
+      if (url) return { url, sure: true };
+    } catch {
+      sure = false;
+      if (++s.fails >= GIVE_UP_AFTER) s.off = true;
+    }
+  }
+  return { url: '', sure };
+}
+
+/* ---------- remembered answers, on this phone only ---------- */
+
+const STORE = 'pop.covers.v1', DAY = 864e5, HIT_DAYS = 60, MISS_DAYS = 14, KEEP = 1500;
+let saved = {}, saveT = 0;
+function loadSaved() {
+  try { saved = JSON.parse(localStorage.getItem(STORE) || '{}') || {}; } catch { saved = {}; }
+  const now = Date.now();
+  for (const [k, v] of Object.entries(saved)) if (!Array.isArray(v) || !(v[1] > now)) delete saved[k];
+}
+function remember(key, url) {
+  saved[key] = [url, Date.now() + (url ? HIT_DAYS : MISS_DAYS) * DAY];
+  clearTimeout(saveT);
+  saveT = setTimeout(() => {
+    const keys = Object.keys(saved);
+    if (keys.length > KEEP) keys.sort((a, b) => saved[a][1] - saved[b][1]).slice(0, keys.length - KEEP).forEach((k) => delete saved[k]);
+    try { localStorage.setItem(STORE, JSON.stringify(saved)); } catch { /* full or blocked: just don't remember */ }
+  }, 1000);
 }
 
 function coverImg(url, bg, key) {
@@ -95,15 +168,13 @@ function apply(key) {
 }
 
 function pump() {
-  while (!stopped && running < PARALLEL && queue.length) {
+  if (stopped()) { queue.length = 0; return; }
+  while (running < PARALLEL && queue.length) {
     const { key, title, author } = queue.shift();
     running++;
     lookup(title, author)
-      .then((url) => { failures = 0; cache.set(key, url); })
-      .catch(() => {
-        cache.set(key, '');
-        if (++failures >= GIVE_UP_AFTER) { stopped = true; queue.length = 0; }
-      })
+      .then(({ url, sure }) => { cache.set(key, url); if (sure) remember(key, url); })
+      .catch(() => cache.set(key, ''))
       .finally(() => { running--; apply(key); pump(); });
   }
 }
@@ -112,17 +183,17 @@ function want(el) {
   const key = el.dataset.cover;
   if (!key) return;
   if (cache.has(key)) { apply(key); return; }
-  if (stopped || asked.has(key)) return;
+  if (stopped() || asked.has(key)) return;
   asked.add(key);
   queue.push({ key, title: el.dataset.t || '', author: el.dataset.a || '' });
   pump();
 }
 
-// A cover that won't load, or comes back as Open Library's 1-pixel blank,
-// goes back to being the chip, and stays that way for the visit.
+// A cover that won't load, or comes back as a blank (Open Library's is 1
+// pixel), goes back to being the chip, and is looked at again another day.
 function undo(img) {
   const key = img.dataset.coverKey;
-  if (key) cache.set(key, '');
+  if (key) { cache.set(key, ''); remember(key, ''); }
   const chip = document.createElement('div');
   chip.className = 'chip';
   chip.style.background = img.style.background;
@@ -132,6 +203,8 @@ function undo(img) {
 export function start(map) {
   if (cache) return;
   cache = map;
+  loadSaved();
+  for (const [k, v] of Object.entries(saved)) if (!cache.has(k)) cache.set(k, v[0]);
   const app = document.getElementById('app');
   if (!app || !('IntersectionObserver' in window)) return;
 
