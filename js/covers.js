@@ -15,8 +15,12 @@
 
    It is careful about what it matches. A wrong cover is worse than none, so
    a cover is used only when the title's words agree and the author's
-   surname does too. What gets sent is a book's title and author, and only for public
-   books: app.js never marks a private one.                                  */
+   surname does too, give or take a small typo in either. A typo can also
+   hide a book from the search itself, so a book that isn't found by title
+   and author is looked for by title alone, then by author alone.
+
+   What gets sent is a book's title and author, and only for public books:
+   app.js never marks a private one.                                        */
 
 import { firebaseConfig } from './config.js';
 
@@ -33,29 +37,70 @@ const n = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]
   .replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim().replace(/^(the|a|an) /, '');
 const surname = (s) => n(s).split(' ').pop() || '';
 
+// Small typos are forgiven, word by word: none in a word of 3 letters or
+// fewer, one in 4 to 7 letters, two in 8 or more. A swapped pair counts as
+// one ("Tolkein" is "Tolkien", "Slaugtherhouse" is "Slaughterhouse").
+const slack = (len) => (len <= 3 ? 0 : len <= 7 ? 1 : 2);
+function typos(a, b, max) {
+  if (Math.abs(a.length - b.length) > max) return max + 1;
+  let p2 = null, p1 = Array.from({ length: b.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= a.length; i++) {
+    const row = [i];
+    let best = i;
+    for (let j = 1; j <= b.length; j++) {
+      let d = Math.min(p1[j] + 1, row[j - 1] + 1, p1[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      if (p2 && i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) d = Math.min(d, p2[j - 2] + 1);
+      row.push(d);
+      if (d < best) best = d;
+    }
+    if (best > max) return max + 1;
+    p2 = p1; p1 = row;
+  }
+  return p1[b.length];
+}
+const near = (a, b) => a === b || typos(a, b, slack(Math.min(a.length, b.length))) <= slack(Math.min(a.length, b.length));
+
+// Little words don't have to match: "lord of flies" is "Lord of the Flies".
+const SMALL = new Set(['the', 'a', 'an', 'of', 'and', 'in', 'on', 'to', 'for', 'with', 'at', 'by', 'from']);
+const words = (s) => { const all = s.split(' ').filter(Boolean), big = all.filter((w) => !SMALL.has(w)); return big.length ? big : all; };
+
 // Titles get typed from memory, so they match on words, not letters.
 // "lord of flies" finds "Lord of the Flies", and "you should talk to someone"
 // finds "Maybe You Should Talk to Someone": every word typed has to be in
-// the real title (or the other way round, for a typed subtitle). A one-word
-// title is too loose for that, so it has to be the real title's first word:
-// "hobbit" finds "The Hobbit, or There and Back Again", not "The Annotated
-// Hobbit". The author's surname is checked as well, in pick().
+// the real title (or the other way round, for a typed subtitle), give or
+// take a typo. A one-word title is too loose for that, so the real title
+// has to be that one word too, before any subtitle: "hobbit" finds "The
+// Hobbit, or There and Back Again", but not "The Annotated Hobbit", and
+// "dune" isn't "Dune Messiah". Spaces don't matter either: "slaughter house
+// five" is "Slaughterhouse-Five". The author's surname is checked as well,
+// in pick(). a is what was typed, b the real title.
 function sameTitle(a, b) {
-  const x = a.split(' ').filter(Boolean), y = b.split(' ').filter(Boolean);
+  const x = words(a), y = words(b);
   if (!x.length || !y.length) return false;
   const [short, long] = x.length <= y.length ? [x, y] : [y, x];
-  if (short.length === 1) return long[0] === short[0];
-  const have = new Set(long);
-  return short.every((w) => have.has(w));
+  // Spaces typed differently, so the words don't line up: compare without
+  // them, allowing a single typo at most.
+  if (short.length !== long.length && typos(short.join(''), long.join(''), 1) <= 1) return true;
+  if (x.length === 1) return y.length === 1 && near(x[0], y[0]);
+  if (short.length === 1) return near(short[0], long[0]);
+  return short.every((w) => long.some((v) => near(w, v)));
 }
 
 // Candidates from either service come in as { titles, authors, url }.
-function pick(found, title, author) {
-  const t = n(title), sn = surname(author), mine = n(author);
-  const agree = (x) => (sn.length > 1 && x.split(' ').includes(sn)) ||
-    (surname(x).length > 1 && mine.split(' ').includes(surname(x)));
+// Exported only so the matching can be tested on its own.
+export function pick(found, title, author) {
+  const t = n(title), sn = surname(author), mine = n(author).split(' ');
+  // The typed surname is in their name, or their surname is in what was
+  // typed: either way give or take a typo, and never on a single letter.
+  const agree = (x) => {
+    const theirs = x.split(' '), last = theirs[theirs.length - 1];
+    return (sn.length > 1 && theirs.some((w) => w.length > 1 && near(sn, w)))
+      || (last.length > 1 && mine.some((w) => w.length > 1 && near(last, w)));
+  };
   for (const c of found) {
-    if (!c.url || !c.titles.some((x) => sameTitle(t, n(x)))) continue;
+    // Each real title as given, and its main part before a subtitle.
+    const titles = c.titles.flatMap((x) => [x, String(x).split(/\s*[:(,;]/)[0]]).map(n);
+    if (!c.url || !titles.some((x) => sameTitle(t, x))) continue;
     if (c.authors.map(n).filter(Boolean).some(agree)) return c.url;
   }
   return '';
@@ -71,10 +116,20 @@ async function get(url, ownReferrer = false) {
   }
 }
 
-// Only the surname goes in a search. A misspelt first name ("Mich Albom") or
-// initials ("J.R.R.") otherwise make it come back empty.
-async function openLibrary(title, author) {
-  const q = new URLSearchParams({ title, author: surname(author), limit: '10', fields: 'cover_i,title,author_name' });
+// Three ways to ask, tried in turn until one finds the book:
+//   both    title and the author's surname (only the surname: a misspelt
+//           first name, "Mich Albom", or initials, "J.R.R.", otherwise make
+//           it come back empty)
+//   title   the title alone, for when the author's name has a typo
+//   author  the surname alone, for when the title has a typo
+// Whatever comes back is still checked word by word in pick().
+const WAYS = ['both', 'title', 'author'];
+
+async function openLibrary(title, author, way) {
+  const sn = surname(author);
+  const q = new URLSearchParams(way === 'both' ? { title, author: sn, limit: '10' }
+    : way === 'title' ? { title, limit: '20' } : { author: sn, limit: '100' });
+  q.set('fields', 'cover_i,title,author_name');
   const r = await get(`${SEARCH}?${q}`);
   if (!r.ok) throw new Error(String(r.status));
   return pick(((await r.json()).docs || []).map((d) => ({
@@ -88,9 +143,11 @@ async function openLibrary(title, author) {
 // without one. The key is checked against the site's address, so the origin
 // goes with keyed requests; nothing else does.
 let googleKey = firebaseConfig?.apiKey || '';
-async function googleBooks(title, author) {
+async function googleBooks(title, author, way) {
+  const sn = surname(author) || n(author);
   const q = new URLSearchParams({
-    q: `${title} inauthor:${surname(author) || author}`, printType: 'books', maxResults: '10',
+    q: way === 'both' ? `${title} inauthor:${sn}` : way === 'title' ? title : `inauthor:${sn}`,
+    printType: 'books', maxResults: way === 'both' ? '10' : '40',
     fields: 'items(volumeInfo(title,subtitle,authors,imageLinks/thumbnail))',
   });
   let r = googleKey ? await get(`${GOOGLE}?${q}&key=${encodeURIComponent(googleKey)}`, true) : null;
@@ -106,21 +163,26 @@ async function googleBooks(title, author) {
 
 // Open Library first; Google Books only when Open Library found nothing.
 const SOURCES = [{ find: openLibrary, fails: 0, off: false }, { find: googleBooks, fails: 0, off: false }];
+// A surname of a letter or two finds far too many books to trust.
+const usable = (way, title, author) => way !== 'author' || surname(author).length > 2;
 const stopped = () => SOURCES.every((s) => s.off);
 
 // { url, sure }: sure means every service answered, so a miss is a real miss
 // and worth remembering; one that errored or gave up means try another day.
 async function lookup(title, author) {
   let sure = true;
-  for (const s of SOURCES) {
-    if (s.off) { sure = false; continue; }
-    try {
-      const url = await s.find(title, author);
-      s.fails = 0;
-      if (url) return { url, sure: true };
-    } catch {
-      sure = false;
-      if (++s.fails >= GIVE_UP_AFTER) s.off = true;
+  for (const way of WAYS) {
+    if (!usable(way, title, author)) continue;
+    for (const s of SOURCES) {
+      if (s.off) { sure = false; continue; }
+      try {
+        const url = await s.find(title, author, way);
+        s.fails = 0;
+        if (url) return { url, sure: true };
+      } catch {
+        sure = false;
+        if (++s.fails >= GIVE_UP_AFTER) s.off = true;
+      }
     }
   }
   return { url: '', sure };
@@ -128,9 +190,11 @@ async function lookup(title, author) {
 
 /* ---------- remembered answers, on this phone only ---------- */
 
-const STORE = 'pop.covers.v1', DAY = 864e5, HIT_DAYS = 60, MISS_DAYS = 14, KEEP = 1500;
+// v2: typo-forgiving matching, so misses remembered by v1 get another go.
+const STORE = 'pop.covers.v2', DAY = 864e5, HIT_DAYS = 60, MISS_DAYS = 14, KEEP = 1500;
 let saved = {}, saveT = 0;
 function loadSaved() {
+  try { localStorage.removeItem('pop.covers.v1'); } catch { /* blocked: fine */ }
   try { saved = JSON.parse(localStorage.getItem(STORE) || '{}') || {}; } catch { saved = {}; }
   const now = Date.now();
   for (const [k, v] of Object.entries(saved)) if (!Array.isArray(v) || !(v[1] > now)) delete saved[k];
