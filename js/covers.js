@@ -17,8 +17,10 @@
    a cover is used only when the title's words agree and the author's
    surname does too, give or take a small typo in either. A typo can also
    hide a book from the search itself, so a book that isn't found by title
-   and author is looked for by title alone, then by author alone. What gets sent is a book's title and author, and only for public
-   books: app.js never marks a private one.                                  */
+   and author is looked for by title alone, then by author alone.
+
+   What gets sent is a book's title and author, and only for public books:
+   app.js never marks a private one.                                        */
 
 import { firebaseConfig } from './config.js';
 
