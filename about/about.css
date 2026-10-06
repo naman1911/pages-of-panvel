@@ -44,11 +44,20 @@ a{color:var(--red-dk)}
 
 /* how it works */
 .tiles{display:grid;gap:12px;margin-top:16px}
-@media (min-width:640px){.tiles{grid-template-columns:repeat(3,1fr)}}
+@media (min-width:640px){.tiles{grid-template-columns:repeat(2,1fr)}}
 .tile{padding:16px;border:2px solid var(--ink);background:var(--cream);box-shadow:4px 4px 0 var(--ink)}
 .tile b{display:block;font:800 21px/1.1 var(--disp);letter-spacing:-.01em}
 .tile p{margin:8px 0 0;font-size:16px;line-height:1.45}
 .tile.red{box-shadow:4px 4px 0 var(--red)}.tile.mustard{box-shadow:4px 4px 0 var(--mustard)}.tile.green{box-shadow:4px 4px 0 var(--green)}
+.tile.blue{box-shadow:4px 4px 0 #4BC4F5}
+
+/* more than reading */
+.story p{margin:14px 0 0}
+.story .h2+p{margin-top:16px}
+.quote{margin:20px 0 4px;padding:16px 18px 14px;background:var(--cream);border:2px solid var(--ink);border-left-width:8px;border-left-color:var(--mustard);transform:rotate(-.6deg)}
+.quote p{margin:0;font:600 clamp(19px,5vw,23px)/1.35 var(--body)}
+.quote cite{display:block;margin-top:10px;font:11px var(--mono);font-style:normal;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+.quote cite::before{content:"— "}
 
 /* featured */
 .cards{display:grid;gap:14px;margin-top:16px}
