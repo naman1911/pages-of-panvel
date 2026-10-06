@@ -296,3 +296,6 @@ export function start(map) {
     if (img instanceof HTMLImageElement && img.classList.contains('cover') && img.naturalWidth < 8) undo(img);
   }, true);
 }
+
+// The same matching, for the title suggestions in the add form (suggest.js).
+export { n as normal, near };
