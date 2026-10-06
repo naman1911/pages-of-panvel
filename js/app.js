@@ -651,10 +651,25 @@ $("filter-toggle").addEventListener("click", () => {
 GENRES.forEach((g) => $("f-genre").add(new Option(g, g)));
 LANGS.forEach((l) => $("f-lang").add(new Option(l, l)));
 
+// Title suggestions (suggest.js), fetched the first time the form opens.
+let suggester = null, suggesting = false;
+function startSuggest() {
+  if (suggester || suggesting) return;
+  suggesting = true;
+  import("./suggest.js").then((m) => {
+    suggester = m.attach({
+      title: $("f-title"), author: $("f-author"), genre: $("f-genre"), lang: $("f-lang"), priv: $("f-private"),
+      shelf: () => state.pub.books, genres: GENRES,
+      coverOf: (b) => { const k = coverKey(b); return (k && COVERS.get(k)) || ""; },
+    });
+  }).catch(() => {}).finally(() => { suggesting = false; });   // no suggestions: the form works as before
+}
+
 $("add-toggle").addEventListener("click", () => {
   const f = $("add-form");
   f.hidden = !f.hidden;
   $("add-toggle").textContent = f.hidden ? "Add a book" : "Never mind";
+  if (!f.hidden) startSuggest(); else suggester?.reset();
 });
 
 $("add-save").addEventListener("click", async () => {
@@ -666,11 +681,17 @@ $("add-save").addEventListener("click", async () => {
     lang: $("f-lang").value, status: "reading", startedAt: todayISO(),
     line: "", lendable: false,
   };
+  // Picked from the suggestions and still that book: its cover is known,
+  // so it goes on the shelf with it straight away.
+  const cover = !$("f-private").checked && suggester?.coverFor(book.title, book.author);
+  const ck = coverKey(book);
+  if (cover && ck && !COVERS.has(ck)) COVERS.set(ck, cover);
   if ($("f-private").checked) {
     await mutatePrivate((p) => { p.books.push(book); return p; });
   } else {
     await mutate((c) => { c.books.push(book); return c; });
   }
+  suggester?.reset();
   ["f-title", "f-author"].forEach((i) => $(i).value = "");
   $("f-private").checked = false;
   $("add-form").hidden = true;
