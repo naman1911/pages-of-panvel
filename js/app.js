@@ -41,6 +41,10 @@ const plural = (n, word) => (n === 1 ? ODD[word] || word.replace(/s$/, "") : wor
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g,
   (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const todayISO = () => new Date().toISOString().slice(0, 10);
+// For the search box: lower case, accents off, punctuation to spaces.
+// Devanagari passes through untouched.
+const fold = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+  .replace(/[^\p{L}\p{N}\p{M}]+/gu, " ").trim();
 const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
 const norm = (s) => String(s || "").toLowerCase()
   .replace(/^(the|a|an)\s+/, "").replace(/[^a-z0-9\u0900-\u097F ]/g, "").trim();
@@ -434,9 +438,18 @@ function renderWall() {
   if (filters.lang) books = books.filter((b) => b.lang === filters.lang);
   if (filters.lendable) books = books.filter((b) => b.lendable);
   if (filters.mine) books = books.filter((b) => twinTitles.has(norm(b.title)));
+  // The search box: every word typed has to turn up in the title, the
+  // writer or the reader's name, in any order, ignoring case and accents.
+  const q = fold($("wall-search")?.value).split(" ").filter(Boolean);
+  if (q.length) books = books.filter((b) => {
+    const hay = fold(`${b.title} ${b.author || ""} ${readerName(b.uid)}`);
+    return q.every((w) => hay.includes(w));
+  });
 
   if (!books.length) {
-    $("wall").innerHTML = `<p class="quiet">${state.pub.books.length
+    $("wall").innerHTML = `<p class="quiet">${q.length
+      ? "Nothing on the shelf matches that search."
+      : state.pub.books.length
       ? "Nothing matches that. Loosen the filter."
       : "Nothing here yet. Add whatever's open on your table — three pages in still counts."}</p>`;
     return;
@@ -474,6 +487,7 @@ function renderMine() {
     `<span class="dot${days.includes(d) ? " on" : ""}${d === todayISO() ? " today" : ""}"></span>`).join("");
   const done = days.includes(todayISO());
   $("checkin").disabled = done;
+  eveningNudge();
   $("checkin").textContent = done ? "Done for today" : "I read today";
 
   const counts = titleCounts();
@@ -740,6 +754,20 @@ $("my-books").addEventListener("keydown", (e) => {
     e.target.closest(".editor")?.querySelector('[data-act="details-save"]')?.click();
   }
 });
+
+// After 7pm, if today isn't ticked yet, "I read today" breathes gently and
+// the Mine tab wears a small dot: a streak is easiest to lose by forgetting.
+// Checked every minute, so it turns on by itself if the page is left open.
+function eveningNudge() {
+  if (!state.user || !state.pub) return;
+  const me = state.pub.members[state.user.uid];
+  const due = new Date().getHours() >= 19 && !(me?.days || []).includes(todayISO());
+  $("checkin").classList.toggle("evening", due);
+  document.querySelector('.tab[data-tab="mine"]')?.classList.toggle("due", due);
+}
+setInterval(eveningNudge, 60000);
+
+$("wall-search").addEventListener("input", () => renderWall());
 
 $("checkin").addEventListener("click", async () => {
   const me = state.pub.members[state.user.uid];
