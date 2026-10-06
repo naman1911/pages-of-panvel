@@ -233,13 +233,14 @@ a.wa:hover .wa-go{transform:translateX(4px)}
 .ab-sub{font-family:var(--mono);font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--dim)}
 .ab-go{flex:0 0 auto;font-family:var(--disp);font-weight:800;font-size:28px;line-height:1;color:var(--red);transition:transform .15s ease}
 .about-card:hover .ab-go{transform:translateX(4px)}
-/* Sign-in screen: a quiet line, so "Continue with Google" stays the thing. */
-.about-card.quiet{padding:10px 12px;gap:10px;background:transparent;border:1px solid var(--hair);box-shadow:none}
-.about-card.quiet:hover,.about-card.quiet:active{transform:none;box-shadow:none;background:rgba(36,29,24,.04)}
-.about-card.quiet .ab-text{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px}
-.about-card.quiet .ab-kick{padding:0;background:none;color:var(--dim);font-size:10.5px}
-.about-card.quiet b{font-size:16px}
-.about-card.quiet .ab-go{font-size:20px;color:var(--dim)}
+/* Sign-in screen: the same card, a little softer (thin border, no shadow,
+   smaller), so "Continue with Google" stays the first thing you see. */
+.about-card.soft{padding:12px 14px;background:rgba(245,239,226,.55);border:1.5px solid rgba(36,29,24,.35);box-shadow:none}
+.about-card.soft:hover{transform:none;box-shadow:none;background:var(--cream)}
+.about-card.soft:active{transform:translateY(1px);box-shadow:none}
+.about-card.soft .ab-kick{background:rgba(192,48,42,.85)}
+.about-card.soft b{font-size:17px}
+.about-card.soft .ab-go{font-size:22px;color:var(--red-dk)}
 /* Sunday tab: the bold version, a red card to sit with the green WhatsApp one. */
 .about-card.in-sunday{margin-top:22px;gap:14px;padding:14px 16px;background:var(--red);color:var(--cream);border-color:var(--ink);box-shadow:5px 5px 0 var(--ink)}
 .about-card.in-sunday:hover{color:var(--cream);box-shadow:7px 7px 0 var(--ink)}
