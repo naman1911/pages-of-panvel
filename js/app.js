@@ -138,6 +138,9 @@ let justFinished = null;
 // been typed so far, so a re-render (anyone's change arrives live) doesn't
 // close the editor or lose the typing.
 let editing = null;
+// The finished book being rated in Mine: { id, stars, text }. Kept here so a
+// live re-render doesn't close it or lose what's typed.
+let rating = null;
 
 // A transaction that never settles — the connection drops mid-write — used to
 // leave state.busy stuck true, because the reset sat after the try/catch instead
@@ -425,6 +428,60 @@ function renderFilters() {
     btn(l, filters.lang === l, () => filters.lang = filters.lang === l ? null : l)));
 }
 
+/* ---------- ratings ---------- */
+
+// Every public rating, grouped by book (same title = same book, as for
+// matches): norm(title) → [{ uid, title, stars, review, at }].
+function ratingsByBook() {
+  const m = new Map();
+  for (const b of state.pub.books) {
+    const n = Number(b.rating);
+    if (!(n >= 1 && n <= 5)) continue;
+    const k = norm(b.title);
+    if (!m.has(k)) m.set(k, []);
+    m.get(k).push({ uid: b.uid, title: b.title, stars: Math.round(n), review: b.review || "", at: b.ratedAt || b.finishedAt || "" });
+  }
+  return m;
+}
+const avgOf = (list) => { const a = list.reduce((s, r) => s + r.stars, 0) / list.length; return (Math.round(a * 10) / 10).toString(); };
+const starRow = (n) => "★".repeat(n) + "☆".repeat(5 - n);
+const shortDate = (iso) => iso ? new Date(iso + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "short" }) : "";
+
+// The pop-up with every review of one book. Closes on ✕, a tap outside, or Esc.
+function openReviews(key, opener) {
+  const list = (ratingsByBook().get(key) || []).slice().sort((a, b) => (b.at || "").localeCompare(a.at || ""));
+  if (!list.length) return;
+  document.querySelector(".rv-back")?.remove();
+  const back = document.createElement("div");
+  back.className = "rv-back";
+  back.innerHTML = `
+    <div class="rv-card" role="dialog" aria-modal="true" aria-labelledby="rv-h">
+      <button class="rv-x" type="button" aria-label="Close">✕</button>
+      <p class="rv-kick">Reviews from the circle</p>
+      <h3 id="rv-h" class="rv-title">${esc(list[0].title)}</h3>
+      <p class="rv-avg"><span class="rv-stars">${starRow(Math.ceil(Number(avgOf(list)) - 0.5))}</span> ${avgOf(list)} / 5 · ${list.length} ${plural(list.length, "readers")}</p>
+      <ul class="rv-list">${list.map((r) => `
+        <li>
+          <div class="rv-row"><b>${esc(readerName(r.uid))}${r.uid === state.user.uid ? " (you)" : ""}</b><span class="rv-stars" aria-label="${r.stars} out of 5">${starRow(r.stars)}</span></div>
+          ${r.review ? `<p class="rv-text">${esc(r.review)}</p>` : `<p class="rv-text none">Just the stars.</p>`}
+          ${r.at ? `<span class="rv-date">${shortDate(r.at)}</span>` : ""}
+        </li>`).join("")}
+      </ul>
+    </div>`;
+  const close = () => {
+    back.remove();
+    document.body.style.overflow = "";
+    removeEventListener("keydown", onKey);
+    opener?.focus?.({ preventScroll: true });
+  };
+  const onKey = (e) => { if (e.key === "Escape") close(); };
+  back.addEventListener("click", (e) => { if (e.target === back || e.target.closest(".rv-x")) close(); });
+  addEventListener("keydown", onKey);
+  document.body.append(back);
+  document.body.style.overflow = "hidden";
+  back.querySelector(".rv-x").focus({ preventScroll: true });
+}
+
 function renderWall() {
   const counts = titleCounts();
   const twinTitles = new Set(myTwins().map((t) => norm(t.book.title)));
@@ -455,16 +512,21 @@ function renderWall() {
     return;
   }
 
-  $("wall").innerHTML = books.map((b) => `
+  const rated = ratingsByBook();
+  $("wall").innerHTML = books.map((b) => {
+    const rv = rated.get(norm(b.title));
+    const sign = rv ? ` <button class="rv-chip" type="button" data-rv="${esc(norm(b.title))}" aria-label="Rated ${avgOf(rv)} out of 5 by ${rv.length}. Show reviews">★ ${avgOf(rv)}<span>${rv.length}</span></button>` : "";
+    return `
     <div class="entry" id="e-${esc(b.id)}">
       ${chip(b)}
       <div class="body">
-        <div class="title">${esc(b.title)}</div>
+        <div class="title">${esc(b.title)}${sign}</div>
         <div class="meta">${b.author ? `<b class="by">${esc(b.author)}</b> — ` : ""}<span class="who${b.uid === state.user.uid ? " me" : ""}">${esc(readerName(b.uid))}${b.uid === state.user.uid ? " (you)" : ""}</span></div>
         <div>${bookTags(b, counts)}</div>
         ${b.line ? `<div class="line">${esc(b.line)}</div>` : ""}
       </div>
-    </div>`).join("");
+    </div>`;
+  }).join("");
 }
 
 function jumpTo(id) {
@@ -506,16 +568,29 @@ function renderMine() {
         <div class="title">${esc(b.title)}</div>
         <div class="meta">${esc(b.author || "author unknown")}</div>
         <div>${bookTags({ ...b, lendable: b.lendable }, null)}
-          ${alone && !b.isPrivate ? `<span class="tag p">first in the circle</span>` : ""}</div>
+          ${alone && !b.isPrivate ? `<span class="tag p">first in the circle</span>` : ""}
+          ${b.rating ? `<span class="tag r" aria-label="Your rating: ${Number(b.rating)} out of 5">${starRow(Math.round(Number(b.rating)))}</span>` : ""}</div>
         ${b.line ? `<div class="line">${esc(b.line)}</div>` : ""}
         <div class="acts">
           ${b.status === "finished" && !b.isPrivate ? `<button class="btn ghost${b.id === justFinished ? " nudge" : ""}" data-act="brag" data-id="${esc(b.id)}">Brag about it ✦</button>` : ""}
           ${b.status === "reading" ? `<button class="btn ghost" data-act="finish" data-id="${esc(b.id)}" data-p="${b.isPrivate ? 1 : 0}">I finished it</button>` : ""}
+          ${b.status === "finished" ? `<button class="btn ghost rate-btn" data-act="rate" data-id="${esc(b.id)}">${b.rating ? "Edit your review" : "Rate it ★"}</button>` : ""}
           <button class="btn ghost" data-act="line" data-id="${esc(b.id)}" data-p="${b.isPrivate ? 1 : 0}">${b.line ? "Change the line" : "Save a line you liked"}</button>
           <button class="btn ghost" data-act="details" data-id="${esc(b.id)}">Edit details</button>
           ${b.isPrivate ? "" : `<button class="btn ghost" data-act="lend" data-id="${esc(b.id)}">${b.lendable ? "Keeping it" : "Happy to lend it"}</button>`}
           <button class="btn ghost" data-act="remove" data-id="${esc(b.id)}" data-p="${b.isPrivate ? 1 : 0}">Remove</button>
         </div>
+        ${rating?.id === b.id ? `
+        <div class="editor rate">
+          <span class="rate-label">How was it?</span>
+          <div class="stars" role="radiogroup" aria-label="Your rating">${[1, 2, 3, 4, 5].map((n) => `<button type="button" class="star${n <= rating.stars ? " on" : ""}" role="radio" aria-checked="${n === rating.stars}" aria-label="${n} ${n === 1 ? "star" : "stars"}" data-act="rate-star" data-id="${esc(b.id)}" data-n="${n}">★</button>`).join("")}</div>
+          <textarea id="rt-${esc(b.id)}" data-rate="text" rows="3" maxlength="300" placeholder="A few lines: what stayed with you? (optional)">${esc(rating.text)}</textarea>
+          <div class="acts">
+            <button class="btn" data-act="rate-save" data-id="${esc(b.id)}" data-p="${b.isPrivate ? 1 : 0}">Save rating</button>
+            <button class="btn ghost" data-act="rate-cancel" data-id="${esc(b.id)}">Cancel</button>
+          </div>
+          ${b.isPrivate ? `<p class="quiet">This book is private, so your rating stays private too.</p>` : `<p class="quiet">Shown to the circle with your name, on this book in Everyone, everything.</p>`}
+        </div>` : ""}
         ${editing?.id === b.id ? `
         <div class="editor details">
           <label class="field"><span>title</span>
@@ -540,6 +615,11 @@ function renderMine() {
     const f = $((editing.focus === "author" ? "ea-" : "et-") + editing.id);
     if (f && editing.focused) { f.focus({ preventScroll: true }); f.setSelectionRange(f.value.length, f.value.length); }
     if (!books.some((x) => x.id === editing.id)) editing = null;   // removed elsewhere
+  }
+  if (rating) {
+    const t = $("rt-" + rating.id);
+    if (t && rating.focused) { t.focus({ preventScroll: true }); t.setSelectionRange(t.value.length, t.value.length); }
+    if (!books.some((x) => x.id === rating.id)) rating = null;
   }
 }
 
@@ -716,6 +796,32 @@ $("my-books").addEventListener("click", async (e) => {
     }
     await patch({ status: "finished", finishedAt: todayISO() });
     party("Finished. That's one more.");
+    // Straight into "how was it?", for anyone who wants to; Cancel is right there.
+    rating = { id, stars: 0, text: "" };
+    renderMine();
+  }
+  if (act === "rate") {
+    const cur = allMine().find((x) => x.id === id);
+    if (!cur) return;
+    rating = rating?.id === id ? null : { id, stars: Math.round(Number(cur.rating)) || 0, text: cur.review || "" };
+    renderMine();
+  }
+  if (act === "rate-star" && rating?.id === id) {
+    rating.stars = Number(b.dataset.n);
+    rating.focused = false;
+    renderMine();
+  }
+  if (act === "rate-cancel") { rating = null; renderMine(); }
+  if (act === "rate-save" && rating?.id === id) {
+    const stars = Math.round(Number(rating.stars));
+    if (!(stars >= 1 && stars <= 5)) { showError("Tap a star first: one to five."); return; }
+    if (state.busy) { showError("Still saving the last change. Give it a second."); return; }   // keep the typing
+    const changes = { rating: stars, review: String(rating.text || "").trim().slice(0, 300), ratedAt: todayISO() };
+    rating = null;
+    // Only ever your own book, as with Edit details.
+    if (isPriv) await mutatePrivate((p) => { p.books = p.books.map((x) => x.id === id ? { ...x, ...changes } : x); return p; });
+    else await mutate((c) => { c.books = c.books.map((x) => x.id === id && x.uid === state.user.uid ? { ...x, ...changes } : x); return c; });
+    party("Thanks for rating it!");
   }
   if (act === "brag") openBragCards({ card: "finished", bookId: id });
   if (act === "lend") {
@@ -761,13 +867,22 @@ $("my-books").addEventListener("click", async (e) => {
 $("my-books").addEventListener("input", (e) => {
   const k = e.target.dataset?.edit;
   if (k && editing) editing[k] = e.target.value;
+  if (e.target.dataset?.rate && rating) rating.text = e.target.value;
 });
 $("my-books").addEventListener("focusin", (e) => {
   const k = e.target.dataset?.edit;
   if (k && editing) { editing.focus = k; editing.focused = true; }
+  if (e.target.dataset?.rate && rating) rating.focused = true;
 });
 $("my-books").addEventListener("focusout", (e) => {
   if (e.target.dataset?.edit && editing) editing.focused = false;
+  if (e.target.dataset?.rate && rating) rating.focused = false;
+});
+
+// The ★ sign on a rated book in Everyone, everything opens its reviews.
+$("wall").addEventListener("click", (e) => {
+  const c = e.target.closest(".rv-chip");
+  if (c) openReviews(c.dataset.rv, c);
 });
 $("my-books").addEventListener("keydown", (e) => {
   if (e.key === "Enter" && e.target.dataset?.edit) {
