@@ -574,7 +574,7 @@ const FAQ = [
   ["What if I miss a day?", "The streak starts again.", "It holds until the end of the next day, so tapping tomorrow keeps it going. Miss a whole day and it's back to zero. You can't tap for a day that's gone."],
   ["Can I keep a book private?", "Yes.", "Tick \"keep this one to myself\" when you add it. It stays off the shelf, out of the standings and off every card."],
   ["Can I edit a book?", "Not yet.", "Remove it and add it again. Your streak isn't touched."],
-  ["Why doesn't my book have a cover?", "Neither Open Library nor Google Books had a match.", "Covers need the author's name. Titles in Marathi and Hindi script aren't looked up, so they keep their colour. A miss is checked again after two weeks."],
+  ["Why doesn't my book have a cover?", "Neither Open Library nor Google Books had a match.", "Covers need the author's name. Titles in Marathi and Hindi script aren't looked up, so they keep their colour. A miss is checked again after a few days."],
   ["How do I post a brag card?", "Mine → \"Make a brag card ✦\".", "Pick a colour, tap a card, tap \"Share\", then Instagram and Stories. No Share button? \"Save image\", then post it from your photos."],
   ["Can I delete an agenda post?", "Your own, yes.", "Tap \"Delete\" under it. Nobody can delete anyone else's."],
   ["Does Marathi or Hindi work?", "Yes, everywhere.", "Titles, authors, saved lines and cards, the lot."],

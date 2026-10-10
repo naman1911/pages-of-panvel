@@ -11,7 +11,7 @@
    image that won't load, all leave the chip exactly as it was. After a few
    failed lookups in a row it stops asking that service for the rest of the
    visit. Answers are remembered on the phone (a found cover for 60 days, a
-   miss for 14), so the shelf doesn't ask again on every visit.
+   miss for 3), so the shelf doesn't ask again on every visit.
 
    It is careful about what it matches. A wrong cover is worse than none, so
    a cover is used only when the title's words agree and the author's
@@ -190,14 +190,34 @@ async function lookup(title, author) {
 
 /* ---------- remembered answers, on this phone only ---------- */
 
-// v2: typo-forgiving matching, so misses remembered by v1 get another go.
-const STORE = 'pop.covers.v2', DAY = 864e5, HIT_DAYS = 60, MISS_DAYS = 14, KEEP = 1500;
+// v3: earlier versions also remembered a cover whose image merely failed
+// to load once (patchy data, a busy image server) as "no cover" for two
+// weeks. v3 keeps every cover found so far and drops all remembered misses,
+// so those books get looked at again.
+const STORE = 'pop.covers.v3', OLD = ['pop.covers.v2', 'pop.covers.v1'];
+const DAY = 864e5, HIT_DAYS = 60, MISS_DAYS = 3, KEEP = 1500;
 let saved = {}, saveT = 0;
 function loadSaved() {
-  try { localStorage.removeItem('pop.covers.v1'); } catch { /* blocked: fine */ }
-  try { saved = JSON.parse(localStorage.getItem(STORE) || '{}') || {}; } catch { saved = {}; }
+  try { saved = JSON.parse(localStorage.getItem(STORE) || 'null') || null; } catch { saved = null; }
+  if (!saved) {
+    saved = {};
+    for (const old of OLD) {
+      try {
+        const o = JSON.parse(localStorage.getItem(old) || '{}') || {};
+        for (const [k, v] of Object.entries(o)) if (Array.isArray(v) && v[0] && !saved[k]) saved[k] = v;   // covers only
+        localStorage.removeItem(old);
+      } catch { /* blocked or broken: start fresh */ }
+    }
+  }
   const now = Date.now();
   for (const [k, v] of Object.entries(saved)) if (!Array.isArray(v) || !(v[1] > now)) delete saved[k];
+}
+// Forget what's remembered about a book, so the next visit asks again.
+function forget(key) {
+  if (!(key in saved)) return;
+  delete saved[key];
+  clearTimeout(saveT);
+  saveT = setTimeout(() => { try { localStorage.setItem(STORE, JSON.stringify(saved)); } catch { /* fine */ } }, 1000);
 }
 function remember(key, url) {
   saved[key] = [url, Date.now() + (url ? HIT_DAYS : MISS_DAYS) * DAY];
@@ -254,10 +274,12 @@ function want(el) {
 }
 
 // A cover that won't load, or comes back as a blank (Open Library's is 1
-// pixel), goes back to being the chip, and is looked at again another day.
+// pixel), goes back to being the chip for this visit only. A failed image is
+// usually a passing problem, so it's never remembered as "no cover": the
+// book is simply looked up afresh next time.
 function undo(img) {
   const key = img.dataset.coverKey;
-  if (key) { cache.set(key, ''); remember(key, ''); }
+  if (key) { cache.set(key, ''); forget(key); }
   const chip = document.createElement('div');
   chip.className = 'chip';
   chip.style.background = img.style.background;
