@@ -27,7 +27,14 @@ import { firebaseConfig } from './config.js';
 const SEARCH = 'https://openlibrary.org/search.json';
 const COVER = (id) => `https://covers.openlibrary.org/b/id/${id}-M.jpg`;
 const GOOGLE = 'https://www.googleapis.com/books/v1/volumes';
-const PARALLEL = 2, TIMEOUT = 8000, GIVE_UP_AFTER = 4;
+// Patient and gentle: Open Library in particular can be slow, and asks to
+// not be hammered. Requests to each service are spaced out, a slow or
+// refused one pauses that service for a while (longer each time) rather
+// than giving up on it, and a book whose lookup went wrong is tried again
+// later in the visit.
+const PARALLEL = 2, TIMEOUT = 15000, GIVE_UP_AFTER = 8, RETRY_AFTER = 20000, MAX_RETRIES = 3;
+const GAP = { ol: 700, gb: 250 };   // least time between two requests to a service, ms
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 let cache = null, running = 0;
 const queue = [], asked = new Set();
@@ -111,6 +118,8 @@ async function get(url, ownReferrer = false) {
   const timer = setTimeout(() => ctl.abort(), TIMEOUT);
   try {
     return await fetch(url, { signal: ctl.signal, credentials: 'omit', referrerPolicy: ownReferrer ? 'origin' : 'no-referrer' });
+  } catch (e) {
+    throw new Error(e?.name === 'AbortError' ? 'slow' : 'network');
   } finally {
     clearTimeout(timer);
   }
@@ -128,7 +137,7 @@ const WAYS = ['both', 'title', 'author'];
 async function openLibrary(title, author, way) {
   const sn = surname(author);
   const q = new URLSearchParams(way === 'both' ? { title, author: sn, limit: '10' }
-    : way === 'title' ? { title, limit: '20' } : { author: sn, limit: '100' });
+    : way === 'title' ? { title, limit: '20' } : { author: sn, limit: '50' });
   q.set('fields', 'cover_i,title,author_name');
   const r = await get(`${SEARCH}?${q}`);
   if (!r.ok) throw new Error(String(r.status));
@@ -162,30 +171,82 @@ async function googleBooks(title, author, way) {
 }
 
 // Open Library first; Google Books only when Open Library found nothing.
-const SOURCES = [{ find: openLibrary, fails: 0, off: false }, { find: googleBooks, fails: 0, off: false }];
+const SOURCES = [
+  { id: 'ol', find: openLibrary, fails: 0, off: false, next: 0, pause: 0 },
+  { id: 'gb', find: googleBooks, fails: 0, off: false, next: 0, pause: 0 },
+];
+// Wait for this service's turn: spaced out, and not while it's paused.
+async function turn(s) {
+  const now = Date.now(), at = Math.max(now, s.next, s.pause);
+  s.next = at + GAP[s.id];
+  if (at > now) await sleep(at - now);
+}
 // A surname of a letter or two finds far too many books to trust.
 const usable = (way, title, author) => way !== 'author' || surname(author).length > 2;
 const stopped = () => SOURCES.every((s) => s.off);
 
-// { url, sure }: sure means every service answered, so a miss is a real miss
-// and worth remembering; one that errored or gave up means try another day.
+// { url, sure, asked }: sure means every service answered, so a miss is a
+// real miss and worth remembering; asked is false when every service was
+// paused and nothing was actually asked, so the book just waits its turn.
 async function lookup(title, author) {
-  let sure = true;
+  let sure = true, asked = false;
   for (const way of WAYS) {
     if (!usable(way, title, author)) continue;
     for (const s of SOURCES) {
       if (s.off) { sure = false; continue; }
+      // Paused after an error: don't sit and wait, this book gets another go later.
+      if (s.pause - Date.now() > 1500) { sure = false; continue; }
+      await turn(s);
+      if (s.off) { sure = false; continue; }
+      asked = true;
       try {
         const url = await s.find(title, author, way);
         s.fails = 0;
-        if (url) return { url, sure: true };
-      } catch {
+        note(s.id, 'ok');
+        if (url) return { url, sure: true, asked };
+      } catch (e) {
         sure = false;
-        if (++s.fails >= GIVE_UP_AFTER) s.off = true;
+        const code = e?.message || 'error';
+        note(s.id, code);
+        s.fails++;
+        s.pause = Date.now() + Math.min(15000, 2000 * 2 ** (s.fails - 1));   // 2s, 4s, 8s, then 15s
+        // Google saying 429/403 means its free allowance is used up; that
+        // doesn't come back in minutes, so stop asking it this visit.
+        if (s.id === 'gb' && (code === '429' || code === '403') && s.fails >= 2) s.off = true;
+        if (s.fails >= GIVE_UP_AFTER) s.off = true;
       }
     }
   }
-  return { url: '', sure };
+  return { url: '', sure, asked };
+}
+
+/* ---------- ?coverdebug: what each service is answering, on screen ---------- */
+
+const DEBUG = typeof location !== 'undefined' && /[?&]coverdebug\b/.test(location.search);
+const stats = {};
+let drawT = 0;
+function note(what, outcome) {
+  if (!DEBUG) return;
+  const k = outcome ? `${what}:${outcome}` : what;
+  stats[k] = (stats[k] || 0) + 1;
+  clearTimeout(drawT);
+  drawT = setTimeout(drawDebug, 200);
+}
+function drawDebug() {
+  let box = document.getElementById('cover-debug');
+  if (!box) {
+    box = document.createElement('div');
+    box.id = 'cover-debug';
+    box.style.cssText = 'position:fixed;left:8px;right:8px;bottom:84px;z-index:90;padding:8px 10px;background:#241D18;color:#F5EFE2;font:11px/1.5 ui-monospace,monospace;border-radius:4px;opacity:.94;white-space:pre-wrap';
+    document.body.append(box);
+  }
+  const line = (id, name) => {
+    const parts = Object.entries(stats).filter(([k]) => k.startsWith(id + ':')).map(([k, v]) => `${k.slice(id.length + 1)} ${v}`);
+    const s = SOURCES.find((x) => x.id === id);
+    return `${name}: ${parts.join(' · ') || 'not asked yet'}${s?.off ? ' · STOPPED' : ''}`;
+  };
+  box.textContent = ['COVERS (?coverdebug)', line('ol', 'Open Library'), line('gb', 'Google Books'),
+    `books: found ${stats.found || 0} · none ${stats.none || 0} · retries ${stats.retry || 0} · gave up ${stats['gave up'] || 0} · looking ${running} · waiting ${queue.length}`].join('\n');
 }
 
 /* ---------- remembered answers, on this phone only ---------- */
@@ -251,15 +312,36 @@ function apply(key) {
   });
 }
 
+const retries = new Map();
 function pump() {
   if (stopped()) { queue.length = 0; return; }
   while (running < PARALLEL && queue.length) {
-    const { key, title, author } = queue.shift();
+    const item = queue.shift(), { key, title, author } = item;
     running++;
     lookup(title, author)
-      .then(({ url, sure }) => { cache.set(key, url); if (sure) remember(key, url); })
-      .catch(() => cache.set(key, ''))
-      .finally(() => { running--; apply(key); pump(); });
+      .catch(() => ({ url: '', sure: false, asked: true }))
+      .then(({ url, sure, asked }) => {
+        if (url || sure) {
+          cache.set(key, url);
+          if (sure) remember(key, url);
+          note(url ? 'found' : 'none');
+          apply(key);
+          return;
+        }
+        // Nothing asked (services paused): wait for the pause to pass.
+        if (!asked) {
+          const until = Math.max(0, ...SOURCES.filter((x) => !x.off).map((x) => x.pause)) - Date.now();
+          setTimeout(() => { queue.push(item); pump(); }, Math.max(3000, until + 200));
+          return;
+        }
+        // A service was slow or said no: give this book another go a bit
+        // later in the visit, instead of leaving it without a cover.
+        const n = (retries.get(key) || 0) + 1;
+        retries.set(key, n);
+        if (n <= MAX_RETRIES) { note('retry'); setTimeout(() => { queue.push(item); pump(); }, RETRY_AFTER); }
+        else { cache.set(key, ''); note('gave up'); apply(key); }
+      })
+      .finally(() => { running--; pump(); });
   }
 }
 
