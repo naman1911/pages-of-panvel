@@ -59,7 +59,7 @@
 </script>
 <link href="https://fonts.googleapis.com/css2?family=Anek+Devanagari:wght@300..800&family=Mukta:wght@400;600&family=Martian+Mono:wght@400&display=swap" rel="stylesheet">
 <!-- Bump ?v= whenever style.css changes, so phones never pair new markup with a cached stylesheet. -->
-<link rel="stylesheet" href="css/style.css?v=14">
+<link rel="stylesheet" href="css/style.css?v=15">
 </head>
 <body>
 
@@ -186,6 +186,9 @@
       <button id="brag" class="big-btn brag" type="button" hidden>Make a brag card <span class="spark" aria-hidden="true">✦</span></button>
     </div>
 
+    <!-- app.js fills this: borrow requests for your books, and your own asks -->
+    <div id="loans" class="loans" hidden></div>
+
     <div class="wall-head">
       <h3 class="h-mid">On your pile</h3>
       <button id="add-toggle" class="btn">Add a book</button>
@@ -251,7 +254,7 @@
 
     <div class="block">
       <h3 class="h-mid">Copies on offer</h3>
-      <p class="quiet">Books people will hand over at the park. Just ask them.</p>
+      <p class="quiet">Books people will hand over at the park. Ask here and they’ll see it, then collect it on Sunday.</p>
       <div id="lendable" class="wall"></div>
     </div>
   </section>

@@ -476,6 +476,20 @@ a.wa:hover .wa-go{transform:translateX(4px)}
 @keyframes rv-fade{from{opacity:0}}
 @keyframes rv-pop{from{opacity:0;transform:translateY(8px) scale(.98)}}
 @media (prefers-reduced-motion:reduce){.rv-back,.rv-card{animation:none}}
+/* Borrowing: the ask button under a book on offer, where your ask stands,
+   and the Borrowing card at the top of Mine (app.js emits all three). */
+.btn.borrow{background:var(--mustard);color:var(--ink)}
+.btn.borrow:hover{background:var(--ink);color:var(--cream)}
+.ask{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin:10px 0 0;font-size:14px;line-height:1.35;color:var(--ink)}
+.ask.yes{color:var(--green);font-weight:600}
+.loans{margin-top:22px;padding:16px 18px 6px;background:var(--cream);border:2px solid var(--ink);box-shadow:5px 5px 0 var(--mustard)}
+.loan-list{list-style:none;margin:6px 0 0;padding:0}
+.loan-list li{padding:12px 0;border-top:1px solid var(--hair)}
+.loan-list li:first-child{border-top:0}
+.loan-list p{margin:0;font-size:16px;line-height:1.4;overflow-wrap:anywhere}
+.loan-list li.due p::before{content:"";display:inline-block;width:8px;height:8px;margin-right:8px;border-radius:50%;background:var(--red);vertical-align:2px}
+.loan-list li.yes p{color:var(--green);font-weight:600}
+.loan-list .acts{margin-top:8px}
 /* Editing a book's title and author (Mine): inputs lifted off the well. */
 .editor.details{border-left-color:var(--mustard)}
 .editor.details input[type=text]{background:var(--cream)}

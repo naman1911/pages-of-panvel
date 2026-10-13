@@ -402,6 +402,7 @@ function bookTags(b, counts) {
   if (b.status === "finished") t.push(`<span class="tag g">finished</span>`);
   if (counts && counts[norm(b.title)] === 1) t.push(`<span class="tag p">nobody else has this</span>`);
   if (b.lendable) t.push(`<span class="tag b">yours if you ask</span>`);
+  if (b.lentTo) t.push(lentTag(b));
   if (b.isPrivate) t.push(`<span class="tag k">private</span>`);
   return t.join("");
 }
@@ -482,6 +483,65 @@ function openReviews(key, opener) {
   back.querySelector(".rv-x").focus({ preventScroll: true });
 }
 
+/* ---------- borrowing ---------- */
+
+// A book marked "yours if you ask" can be asked for from the shelf. The ask
+// lives on the book itself, in two fields and nothing else: asks, who has
+// asked ({ uid, at }, plus no: true once the owner says not now), and lentTo,
+// who has it once the owner says yes ({ uid, at }). A borrower only ever adds
+// or takes back their own ask; only the owner answers, lends or takes back.
+const ASK_CAP = 12;
+const firstName = (id) => readerName(id).split(" ")[0];
+const myAsk = (b) => (b.asks || []).find((a) => a.uid === state.user.uid);
+// No empty list left behind on a book once the last ask is gone.
+const tidy = (b) => { if (!b.asks?.length) delete b.asks; if (!b.lentTo) delete b.lentTo; return b; };
+const borrowBtn = (act, id, label, cls = "ghost", who = "") =>
+  `<button class="btn ${cls}" type="button" data-borrow="${act}" data-id="${esc(id)}"${who ? ` data-who="${esc(who)}"` : ""}>${label}</button>`;
+
+const lentTag = (b) => `<span class="tag k">with ${b.lentTo.uid === state.user.uid ? "you" : esc(firstName(b.lentTo.uid))} now</span>`;
+
+// Under someone else's book on the shelf: the button, or where your ask is.
+function borrowBit(b) {
+  if (b.isPrivate || b.uid === state.user.uid) return "";
+  const ask = myAsk(b), owner = esc(firstName(b.uid));
+  if (b.lentTo?.uid === state.user.uid) return `<p class="ask yes">✓ ${owner} said yes. Collect it from them on Sunday.</p>`;
+  if (ask?.no) return `<p class="ask">${owner} is keeping this one for now. ${borrowBtn("ok", b.id, "OK", "ghost tiny")}</p>`;
+  if (ask) return `<p class="ask">Asked ✓ ${owner} will see it on their Mine tab. ${borrowBtn("cancel", b.id, "Cancel", "ghost tiny")}</p>`;
+  if (!b.lendable) return "";
+  return `<div class="acts">${borrowBtn("ask", b.id, b.lentTo ? "Ask to be next" : "I'd like to borrow this", "borrow")}</div>`;
+}
+
+// Anything waiting on you: someone asking for your book, or a "not now" you
+// haven't seen yet. It puts the small dot on the Mine tab.
+function loanNews() {
+  const me = state.user.uid;
+  return state.pub.books.some((b) => (b.asks || []).some((a) => b.uid === me ? !a.no : a.uid === me && a.no));
+}
+
+// The Borrowing card at the top of Mine. Hidden when there's nothing on it.
+function renderLoans() {
+  const me = state.user.uid, rows = [];
+  const title = (b) => `<b>${esc(b.title)}</b>`;
+  const mine = state.pub.books.filter((b) => b.uid === me);
+  for (const b of mine) for (const a of (b.asks || []).filter((a) => !a.no)) rows.push(`
+    <li class="due"><p><b>${esc(readerName(a.uid))}</b> would like to borrow ${title(b)}.${b.lentTo ? ` It's with ${esc(firstName(b.lentTo.uid))} right now.` : ""}</p>
+      <div class="acts">${b.lentTo ? "" : borrowBtn("yes", b.id, "Yes, lend it", "dark", a.uid)}${borrowBtn("no", b.id, "Not now", "ghost", a.uid)}</div></li>`);
+  for (const b of mine) if (b.lentTo) rows.push(`
+    <li><p>${title(b)} is with <b>${esc(readerName(b.lentTo.uid))}</b>${b.lentTo.at ? ` since ${shortDate(b.lentTo.at)}` : ""}.</p>
+      <div class="acts">${borrowBtn("back", b.id, "It's back with me")}</div></li>`);
+  for (const b of state.pub.books) {
+    if (b.uid === me) continue;
+    const ask = myAsk(b), owner = esc(firstName(b.uid));
+    if (b.lentTo?.uid === me) rows.push(`<li class="yes"><p>✓ ${owner} said yes to ${title(b)}. Collect it from them on Sunday.</p></li>`);
+    else if (ask?.no) rows.push(`<li><p>${owner} is keeping ${title(b)} for now.</p><div class="acts">${borrowBtn("ok", b.id, "OK")}</div></li>`);
+    else if (ask) rows.push(`<li><p>You asked ${owner} for ${title(b)}. Waiting to hear back.</p><div class="acts">${borrowBtn("cancel", b.id, "Cancel")}</div></li>`);
+  }
+  const box = $("loans");
+  if (!box) return;
+  box.hidden = !rows.length;
+  box.innerHTML = rows.length ? `<h3 class="h-mid">Borrowing</h3><ul class="loan-list">${rows.join("")}</ul>` : "";
+}
+
 function renderWall() {
   const counts = titleCounts();
   const twinTitles = new Set(myTwins().map((t) => norm(t.book.title)));
@@ -524,6 +584,7 @@ function renderWall() {
         <div class="meta">${b.author ? `<b class="by">${esc(b.author)}</b> — ` : ""}<span class="who${b.uid === state.user.uid ? " me" : ""}">${esc(readerName(b.uid))}${b.uid === state.user.uid ? " (you)" : ""}</span></div>
         <div>${bookTags(b, counts)}</div>
         ${b.line ? `<div class="line">${esc(b.line)}</div>` : ""}
+        ${borrowBit(b)}
       </div>
     </div>`;
   }).join("");
@@ -553,6 +614,7 @@ function renderMine() {
   $("checkin").textContent = done ? "Done for today" : "I read today";
 
   const counts = titleCounts();
+  renderLoans();
   const books = allMine();
   const box = $("my-books");
   if (!books.length) {
@@ -703,7 +765,9 @@ function renderSunday() {
       ${chip(b)}
       <div class="body">
         <div class="title">${esc(b.title)}</div>
-        <div class="meta">${b.author ? esc(b.author) + " — " : ""}from ${esc(readerName(b.uid))}</div>
+        <div class="meta">${b.author ? esc(b.author) + " — " : ""}from ${esc(readerName(b.uid))}${b.uid === state.user.uid ? " (you)" : ""}</div>
+        ${b.lentTo ? `<div>${lentTag(b)}</div>` : ""}
+        ${borrowBit(b)}
       </div>
     </div>`).join("") : `<p class="quiet">None offered yet. Mark one of yours if you're happy to pass it on.</p>`;
 }
@@ -825,8 +889,13 @@ $("my-books").addEventListener("click", async (e) => {
   }
   if (act === "brag") openBragCards({ card: "finished", bookId: id });
   if (act === "lend") {
-    const cur = state.pub.books.find((x) => x.id === id);
-    await patch({ lendable: !cur?.lendable });
+    // Taking a book off offer answers anyone still waiting with "not now",
+    // so nobody is left hanging. Whoever already has it keeps it.
+    await mutate((c) => {
+      c.books = c.books.map((x) => x.id !== id || x.uid !== state.user.uid ? x
+        : tidy({ ...x, lendable: !x.lendable, asks: x.lendable ? (x.asks || []).map((a) => ({ ...a, no: true })) : x.asks }));
+      return c;
+    });
   }
   if (act === "line") {
     const ed = $("ed-" + id);
@@ -899,11 +968,53 @@ function eveningNudge() {
   const me = state.pub.members[state.user.uid];
   const due = new Date().getHours() >= 19 && !(me?.days || []).includes(todayISO());
   $("checkin").classList.toggle("evening", due);
-  document.querySelector('.tab[data-tab="mine"]')?.classList.toggle("due", due);
+  document.querySelector('.tab[data-tab="mine"]')?.classList.toggle("due", due || loanNews());
 }
 setInterval(eveningNudge, 60000);
 
 $("wall-search").addEventListener("input", () => renderWall());
+
+// Every borrowing button, wherever it is: the shelf, Mine and Sunday.
+$("app").addEventListener("click", async (e) => {
+  const btn = e.target.closest("button[data-borrow]");
+  if (!btn) return;
+  const { borrow: act, id, who } = btn.dataset;
+  const me = state.user.uid;
+  const book = state.pub.books.find((x) => x.id === id);
+  if (!book) return;
+  const owner = firstName(book.uid);
+  const edit = (fn) => mutate((c) => { c.books = c.books.map((x) => x.id === id ? tidy(fn({ ...x, asks: [...(x.asks || [])] })) : x); return c; });
+
+  if (act === "ask") {
+    if (book.uid === me || !book.lendable) return;
+    if ((book.asks || []).length >= ASK_CAP) { showError(`Lots of people have asked for this one already. Catch ${owner} on Sunday.`); return; }
+    await edit((x) => {
+      if (x.uid === me || !x.lendable || x.asks.length >= ASK_CAP) return x;
+      x.asks = [...x.asks.filter((a) => a.uid !== me), { uid: me, at: todayISO() }];
+      return x;
+    });
+    party(`Asked! ${owner} will see it.`);
+  }
+  // Taking back your own ask, or clearing a "not now" once you've seen it.
+  if (act === "cancel" || act === "ok") await edit((x) => { x.asks = x.asks.filter((a) => a.uid !== me); return x; });
+
+  // The rest are the owner's answers.
+  if (book.uid !== me) return;
+  if (act === "yes") {
+    await edit((x) => {
+      if (x.uid !== me || x.lentTo || !x.asks.some((a) => a.uid === who)) return x;
+      x.lentTo = { uid: who, at: todayISO() };
+      x.asks = x.asks.filter((a) => a.uid !== who);
+      return x;
+    });
+    party(`Lovely. Bring it for ${firstName(who)} on Sunday.`);
+  }
+  if (act === "no") await edit((x) => { if (x.uid === me) x.asks = x.asks.map((a) => a.uid === who ? { ...a, no: true } : a); return x; });
+  if (act === "back") {
+    await edit((x) => { if (x.uid === me) delete x.lentTo; return x; });
+    party("Welcome home, book.");
+  }
+});
 
 $("checkin").addEventListener("click", async () => {
   const me = state.pub.members[state.user.uid];
