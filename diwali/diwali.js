@@ -87,14 +87,14 @@ function fireworks(times = 4) {
 setTimeout(() => fireworks(3), 500);
 
 /* ---------- the RSVP button: a quick ride down the page ---------- */
-// Fast enough to feel like a whoosh, slow enough to catch a glimpse of
-// what's on the way. Slow at the ends, quick in the middle.
+// An unhurried glide, so there's a glimpse of what's on the way.
+// Gentle at the ends, a little quicker in the middle.
 $("cta").addEventListener("click", (e) => {
   const target = $("rsvp");
   if (!target || CALM) return;   // the link's own jump does the job
   e.preventDefault();
   const from = scrollY, to = from + target.getBoundingClientRect().top - 12;
-  const dur = 1100, t0 = performance.now();
+  const dur = 2000, t0 = performance.now();
   const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
   const step = (now) => {
     const t = Math.min(1, (now - t0) / dur);
