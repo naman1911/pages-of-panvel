@@ -1,8 +1,8 @@
 /* Party RSVPs on the organiser's desk: everyone who said yes on /diwali.
 
    Reads the `rsvp` collection, which only organisers may read (it holds
-   phone numbers). Read-only, like the rest of the desk. The same number
-   sent twice counts once, with the latest name and headcount.          */
+   phone numbers). Read-only, like the rest of the desk. One RSVP per
+   person; the same number sent twice counts once, with the latest name.          */
 
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
 const box = () => document.getElementById("rsvp-body");
@@ -36,14 +36,12 @@ function render() {
     root.append(el("div", "empty-note", "No RSVPs yet. Share pagesofpanvel.in/diwali on WhatsApp and Instagram, and names appear here, live."));
     return;
   }
-  const heads = list.reduce((s, p) => s + 1 + (p.plus || 0), 0);
   const today = list.filter((p) => p.at && Date.now() - p.at < 864e5).length;
   const k = el("div", "kpis");
   k.append(
-    kpi("People coming", heads, "everyone, friends included", true),
-    kpi("RSVPs", list.length, "one per WhatsApp number"),
-    kpi("Bringing friends", list.filter((p) => p.plus).length, `${heads - list.length} extra in all`),
-    kpi("Last 24 hours", today, today === 1 ? "new RSVP" : "new RSVPs"));
+    kpi("People coming", list.length, "one RSVP per WhatsApp number", true),
+    kpi("Last 24 hours", today, today === 1 ? "new RSVP" : "new RSVPs"),
+    kpi("Sent twice", list.filter((p) => p.times > 1).length, "same number, counted once"));
   root.append(k);
 
   const tools = el("div", "fb-tools");
@@ -62,10 +60,10 @@ function render() {
 
   const wrap = el("div", "table-wrap"), t = el("table", "table rsvp-table");
   const hr = el("tr");
-  for (const h of ["Name", "WhatsApp", "Coming", "When"]) hr.append(el("th", h === "Coming" ? "num" : null, h));
+  for (const h of ["#", "Name", "WhatsApp", "When"]) hr.append(el("th", h === "#" ? "num" : null, h));
   const thead = el("thead"); thead.append(hr);
   const tb = el("tbody");
-  for (const p of list) {
+  list.forEach((p, i) => {
     const tr = el("tr");
     const wa = el("a", null, pretty(p.phone));
     wa.href = "https://wa.me/" + p.phone.replace(/\D/g, "");
@@ -73,9 +71,9 @@ function render() {
     const num = el("td"); num.append(wa);
     const name = el("td", null, p.name);
     if (p.times > 1) name.append(el("small", "dup", ` sent ${p.times}×`));
-    tr.append(name, num, el("td", "num", p.plus ? `1 + ${p.plus}` : "1"), el("td", null, when(p.at)));
+    tr.append(el("td", "num", list.length - i), name, num, el("td", null, when(p.at)));
     tb.append(tr);
-  }
+  });
   t.append(thead, tb);
   wrap.append(t);
   root.append(wrap);
@@ -83,8 +81,8 @@ function render() {
 
 function download(list) {
   const q = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
-  const lines = [["Name", "WhatsApp", "Friends", "Total", "RSVP'd at", "Times sent"].map(q).join(",")]
-    .concat(list.map((p) => [p.name, p.phone, p.plus || 0, 1 + (p.plus || 0), p.at ? p.at.toISOString() : "", p.times].map(q).join(",")));
+  const lines = [["Name", "WhatsApp", "RSVP'd at", "Times sent"].map(q).join(",")]
+    .concat(list.map((p) => [p.name, p.phone, p.at ? p.at.toISOString() : "", p.times].map(q).join(",")));
   // The BOM keeps Marathi and Hindi names intact when Excel opens it.
   const blob = new Blob(["﻿" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
   const a = el("a"); a.href = URL.createObjectURL(blob);
@@ -106,7 +104,7 @@ export function watchRsvp(F, db, role = "owner") {
   roleForSetup = role;
   return F.onSnapshot(F.query(F.collection(db, "rsvp"), F.where("e", "==", EVENT)),
     (snap) => {
-      rows = snap.docs.map((d) => { const x = d.data(); return { id: d.id, name: x.name || "", phone: x.phone || "", plus: x.plus || 0, at: x.at?.toDate ? x.at.toDate() : null }; });
+      rows = snap.docs.map((d) => { const x = d.data(); return { id: d.id, name: x.name || "", phone: x.phone || "", at: x.at?.toDate ? x.at.toDate() : null }; });
       render();
     },
     (e) => setup(e?.code));
@@ -117,7 +115,7 @@ export function demoRsvp() {
   const names = ["Nitya", "Vineet", "Ronit", "Rishikesh", "Vaishnavi", "Anushka", "Siddhi", "Yugandhar", "Vineet"];
   rows = names.map((name, i) => {
     const at = new Date(); at.setHours(at.getHours() - i * 9);
-    return { id: "d" + i, name, phone: "+9198765" + String(43210 + (name === "Vineet" ? 1 : i * 7)).padStart(5, "0"), plus: [0, 1, 0, 2, 0, 0, 1, 0, 1][i], at };
+    return { id: "d" + i, name, phone: "+9198765" + String(43210 + (name === "Vineet" ? 1 : i * 7)).padStart(5, "0"), at };
   });
   render();
 }

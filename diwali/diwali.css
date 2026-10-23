@@ -40,6 +40,8 @@ button,input{font:inherit;color:inherit}
 .date-tag{display:inline-flex;align-items:baseline;gap:8px;margin:22px 0 0;padding:8px 16px 6px;background:var(--red);color:var(--cream);
   border:3px solid var(--cream);box-shadow:5px 5px 0 var(--gold);transform:rotate(3deg);font:800 30px/1 var(--disp);text-transform:uppercase;letter-spacing:-.01em}
 .date-tag b{font-family:var(--mono);font-weight:400;font-size:13px;letter-spacing:.1em}
+.venue-line{margin:10px 0 0;font:700 20px/1.2 var(--disp)}
+.venue-line a{color:var(--cream);text-decoration:underline;text-decoration-color:var(--gold);text-underline-offset:4px}
 .greet{margin:18px 0 0;font:700 28px/1.1 var(--disp);color:var(--gold)}
 .lede{max-width:34ch;margin:12px auto 0;color:var(--dim);font-size:18px}
 .cta{display:inline-flex;align-items:center;gap:10px;margin-top:22px;min-height:54px;padding:0 24px;background:var(--gold);color:var(--ink);
@@ -71,13 +73,14 @@ section{padding-top:64px}
 .h2.ink{color:var(--ink)}
 
 .cards{list-style:none;margin:22px 0 0;padding:0;display:grid;gap:16px}
-@media (min-width:720px){.cards{grid-template-columns:repeat(3,1fr)}}
+@media (min-width:720px){.cards{grid-template-columns:repeat(2,1fr);gap:22px}}
 .card{display:grid;gap:6px;padding:18px 18px 16px;color:var(--ink);border:3px solid var(--ink);font-size:16px;line-height:1.4}
 .card b{font:800 26px/1 var(--disp);text-transform:uppercase;letter-spacing:-.01em}
 .card .emo{font-size:34px;line-height:1}
 .c1{background:var(--gold);box-shadow:6px 6px 0 var(--red);transform:rotate(-1.5deg)}
 .c2{background:var(--cream);box-shadow:6px 6px 0 var(--pink);transform:rotate(1deg)}
 .c3{background:#FF9DC2;box-shadow:6px 6px 0 var(--gold);transform:rotate(-.8deg)}
+.c4{background:#9BE04F;box-shadow:6px 6px 0 var(--cream);transform:rotate(1.2deg)}
 
 /* last year's photo, taped in like a polaroid */
 .polaroid{position:relative;margin:30px auto 0;max-width:560px;padding:12px 12px 0;background:var(--cream);color:var(--ink);
@@ -100,6 +103,8 @@ section{padding-top:64px}
 .facts div{display:grid;grid-template-columns:110px 1fr;gap:10px;align-items:baseline}
 .facts dt{font:10.5px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:rgba(36,29,24,.66)}
 .facts dd{margin:0;font-weight:600}
+.facts dd a{color:var(--red)}
+.facts .dir{font-weight:400;font-size:14px;color:rgba(36,29,24,.6)}
 .form{display:grid;gap:16px;margin-top:20px}
 .field{display:grid;gap:6px;margin:0;padding:0;border:0;min-width:0}
 .field>span,.field legend span{font:10.5px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:rgba(36,29,24,.7)}
@@ -109,10 +114,6 @@ section{padding-top:64px}
 .field input[aria-invalid="true"]{border-color:var(--red);box-shadow:4px 4px 0 rgba(192,48,42,.35)}
 .phone{display:flex}
 .phone b{display:grid;place-items:center;padding:0 12px;border:2px solid var(--ink);border-right:0;background:var(--paper);font:400 14px var(--mono)}
-.chips{display:flex;flex-wrap:wrap;gap:8px}
-.chip{min-height:46px;padding:0 14px;border:2px solid var(--ink);background:#fff;cursor:pointer;font:600 16px var(--body);transition:transform .1s ease}
-.chip[aria-checked="true"]{background:var(--ink);color:var(--cream);box-shadow:3px 3px 0 var(--gold)}
-.chip:active{transform:translateY(1px)}
 .err{margin:0;padding:10px 12px;background:#FBE3DF;border-left:4px solid var(--red);font-size:15px}
 .send{display:flex;align-items:center;justify-content:center;gap:10px;min-height:58px;padding:0 18px;border:3px solid var(--ink);cursor:pointer;
   background:var(--red);color:var(--cream);box-shadow:5px 5px 0 var(--ink);font:800 24px/1 var(--disp);text-transform:uppercase;letter-spacing:-.01em;text-decoration:none;

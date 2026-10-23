@@ -2,7 +2,7 @@
    ten-second RSVP.
 
    An RSVP is one document in the `rsvp` collection: { e, name, phone,
-   plus, at }. No account is needed; the database rules check every field
+   at }, one per person. No account is needed; the database rules check every field
    and only the organisers can read them back (they appear first on the
    organiser's desk). ?demo sends nothing.                                 */
 
@@ -88,13 +88,8 @@ setTimeout(() => fireworks(3), 500);
 
 /* ---------- the RSVP ---------- */
 
-let plus = 0, sending = false, fb = null;
+let sending = false, fb = null;
 const form = $("form"), err = $("err"), send = $("send");
-
-document.querySelectorAll(".chip[data-plus]").forEach((c) => c.addEventListener("click", () => {
-  plus = Number(c.dataset.plus);
-  document.querySelectorAll(".chip[data-plus]").forEach((x) => x.setAttribute("aria-checked", String(x === c)));
-}));
 
 // Any way people type an Indian mobile, or a number with its country code,
 // becomes +<digits>. Returns "" if it can't be a WhatsApp number.
@@ -130,7 +125,7 @@ form.addEventListener("submit", async (e) => {
   if (sending) return;
   const name = $("name").value.replace(/\s+/g, " ").trim().slice(0, 60);
   const phone = normalPhone($("phone").value);
-  if (!name) return say("Tell us your name first.", $("name"));
+  if (!name) return say("We need a name for the guest list. A nickname works too.", $("name"));
   if (!phone) return say("That doesn't look like a WhatsApp number. Try 10 digits, like 98765 43210.", $("phone"));
   say("");
   sending = true;
@@ -139,11 +134,11 @@ form.addEventListener("submit", async (e) => {
   try {
     if (!DEMO) {
       const { F, db } = await warm();
-      const write = F.addDoc(F.collection(db, "rsvp"), { e: EVENT, name, phone, plus, at: F.serverTimestamp() });
+      const write = F.addDoc(F.collection(db, "rsvp"), { e: EVENT, name, phone, at: F.serverTimestamp() });
       await Promise.race([write, new Promise((_, no) => setTimeout(() => no(Object.assign(new Error("timeout"), { code: "timeout" })), 15000))]);
     }
-    try { localStorage.setItem(KEY, JSON.stringify({ name, plus })); } catch { /* private mode: fine */ }
-    showDone(name, plus, false);
+    try { localStorage.setItem(KEY, JSON.stringify({ name })); } catch { /* private mode: fine */ }
+    showDone(name, false);
     fireworks(6);
   } catch (e2) {
     say(e2?.code === "permission-denied"
@@ -156,19 +151,16 @@ form.addEventListener("submit", async (e) => {
   }
 });
 
-function showDone(name, n, before) {
+function showDone(name, before) {
   const first = name.split(" ")[0];
   $("done-h").textContent = before ? `You're already in, ${first}!` : `You're on the list, ${first}!`;
-  $("done-p").textContent = (n ? `You + ${n} ${n === 1 ? "friend" : "friends"}. ` : "") +
-    "We'll WhatsApp you the time and place. Start planning the outfit." + (DEMO ? " (Demo: nothing was sent.)" : "");
+  $("done-p").textContent = "See you at My Baagaan. We'll WhatsApp you the time. Start planning the outfit." + (DEMO ? " (Demo: nothing was sent.)" : "");
   form.hidden = true;
   $("done").hidden = false;
 }
 
 $("again").addEventListener("click", () => {
   form.reset();
-  plus = 0;
-  document.querySelectorAll(".chip[data-plus]").forEach((x) => x.setAttribute("aria-checked", String(x.dataset.plus === "0")));
   $("done").hidden = true;
   form.hidden = false;
   $("name").focus();
@@ -180,5 +172,5 @@ $("share").href = "https://wa.me/?text=" + encodeURIComponent(
 // Back on the page after RSVPing: say so, with a way to add someone else.
 try {
   const prev = JSON.parse(localStorage.getItem(KEY) || "null");
-  if (prev?.name && !DEMO) showDone(prev.name, prev.plus || 0, true);
+  if (prev?.name && !DEMO) showDone(prev.name, true);
 } catch { /* nothing remembered */ }
