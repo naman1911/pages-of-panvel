@@ -176,7 +176,7 @@ form.addEventListener("submit", async (e) => {
 function showDone(name, before) {
   const first = name.split(" ")[0];
   $("done-h").textContent = before ? `You're already in, ${first}!` : `You're on the list, ${first}!`;
-  $("done-p").textContent = "See you at My Baagaan. We'll WhatsApp you the time. Start planning the outfit." + (DEMO ? " (Demo: nothing was sent.)" : "");
+  $("done-p").textContent = "See you at My Baagaan. Start planning the outfit." + (DEMO ? " (Demo: nothing was sent.)" : "");
   form.hidden = true;
   $("done").hidden = false;
 }

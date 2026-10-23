@@ -131,6 +131,9 @@ section{padding-top:64px}
 .done-h{margin:0;font:800 clamp(36px,10vw,52px)/.9 var(--disp);text-transform:uppercase;letter-spacing:-.03em;color:var(--red)}
 .done-p{margin:0;font-size:17px}
 .send.wa{background:#1F8A4C;font-size:19px}
+.join{display:grid;gap:10px;margin-top:4px;padding:14px;background:#E3F4E8;border:2px dashed #1F8A4C}
+.join p{margin:0;font-size:16px;line-height:1.45}
+.send.share{background:var(--cream);color:var(--ink);font-size:17px;min-height:50px;box-shadow:4px 4px 0 var(--gold)}
 .link{justify-self:center;border:0;background:none;padding:8px;cursor:pointer;font:12px var(--mono);letter-spacing:.06em;text-transform:uppercase;text-decoration:underline;color:var(--ink)}
 
 .foot{max-width:880px;margin:56px auto 0;padding:24px 16px 40px;text-align:center;color:var(--dim);font-size:14px}
