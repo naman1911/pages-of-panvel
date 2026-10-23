@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Diwali Party · Sun 1 Nov — Pages of Panvel</title>
+<meta name="description" content="Pages of Panvel's Diwali party, Sunday 1 November. Lights, food, festive best and the whole circle. RSVP in ten seconds.">
+<meta name="theme-color" content="#1B1320">
+<!-- The link preview on WhatsApp, Instagram and the rest: diwali/share.jpg. -->
+<meta property="og:title" content="Diwali Party · Pages of Panvel · Sun 1 Nov">
+<meta property="og:description" content="Lights, food, festive best and the whole circle. Tap to RSVP.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://pagesofpanvel.in/diwali/">
+<meta property="og:site_name" content="Pages of Panvel">
+<meta property="og:image" content="https://pagesofpanvel.in/diwali/share.jpg?v=1">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Pages of Panvel Diwali party, Sunday 1 November. RSVP now.">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231B1320'/%3E%3Cpath d='M16 5c3 4 3 7 0 9-3-2-3-5 0-9z' fill='%23FFB627'/%3E%3Cpath d='M5 17h22c-1 6-5 9-11 9S6 23 5 17z' fill='%23C0302A'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anek+Devanagari:wght@500..800&family=Mukta:wght@400;600&family=Martian+Mono:wght@400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="diwali.css?v=1">
+</head>
+<body>
+
+<!-- Taps anywhere on the dark parts throw a little phuljhadi spark. -->
+<canvas id="sparks" class="sparks" aria-hidden="true"></canvas>
+
+<div id="toran" class="toran" aria-hidden="true"></div>
+
+<header class="hero">
+  <p class="kick">Pages of Panvel · दिवाळी 2026</p>
+  <h1 class="title">
+    <span class="t1">Diwali</span>
+    <span class="t2">Party</span>
+  </h1>
+  <p class="date-tag"><b>Sun</b> 1 Nov</p>
+  <p class="greet">शुभ दीपावली</p>
+  <p class="lede">The circle puts the bookmarks in for one day: festive best, good food, loud laughs, and every reader you've nodded at across the park.</p>
+  <a class="cta" href="#rsvp">Count me in <span aria-hidden="true">→</span></a>
+
+  <div class="diyas" aria-hidden="true">
+    <span class="diya"></span><span class="diya"></span><span class="diya"></span><span class="diya"></span><span class="diya"></span>
+  </div>
+</header>
+
+<main>
+  <section class="what" aria-labelledby="what-h">
+    <h2 id="what-h" class="h2">What's lit</h2>
+    <ul class="cards">
+      <li class="card c1"><span class="emo" aria-hidden="true">🪔</span><b>Festive best</b><span>Kurta, saree, sherwani, that one ethnic jacket. Dress up.</span></li>
+      <li class="card c2"><span class="emo" aria-hidden="true">🍬</span><b>Food &amp; chai</b><span>Something sweet, something spicy, a lot of catching up.</span></li>
+      <li class="card c3"><span class="emo" aria-hidden="true">🎇</span><b>Games &amp; props</b><span>Bookish photo props, silly games, a few surprises.</span></li>
+    </ul>
+  </section>
+
+  <section class="memory" aria-labelledby="mem-h">
+    <h2 id="mem-h" class="h2">Last Diwali,<br><span>we did this.</span></h2>
+    <figure class="polaroid">
+      <span class="tape" aria-hidden="true"></span>
+      <img src="last-year.jpg" width="960" height="960" loading="lazy" decoding="async"
+        alt="Last year's Pages of Panvel Diwali party: about thirty readers in festive clothes, holding bookish photo props and a Happy Diwali frame, under marigold garlands.">
+      <figcaption>Diwali 2025 · the whole circle, dressed up</figcaption>
+      <span class="sticker s1" aria-hidden="true">PATAKA!</span>
+      <span class="sticker s2" aria-hidden="true">Reading is my superpower</span>
+    </figure>
+    <p class="mem-line">This year, you're in the picture.</p>
+  </section>
+
+  <section id="rsvp" class="rsvp" aria-labelledby="rsvp-h">
+    <div class="rsvp-card">
+      <p class="kick dark">Ten-second RSVP</p>
+      <h2 id="rsvp-h" class="h2 ink">Save me<br>a spot</h2>
+
+      <dl class="facts">
+        <div><dt>When</dt><dd>Sunday, 1 November</dd></div>
+        <div><dt>Time &amp; place</dt><dd>We'll WhatsApp you the details</dd></div>
+      </dl>
+
+      <!-- deliberately not a <form> with an action: diwali.js sends it -->
+      <form id="form" class="form" novalidate>
+        <label class="field"><span>Your name</span>
+          <input id="name" name="name" type="text" maxlength="60" autocomplete="name" placeholder="What the circle calls you" required></label>
+        <label class="field"><span>WhatsApp number</span>
+          <span class="phone"><b aria-hidden="true">+91</b>
+          <input id="phone" name="phone" type="tel" inputmode="tel" maxlength="18" autocomplete="tel-national" placeholder="98765 43210" required></span></label>
+        <fieldset class="field plus">
+          <legend><span>Coming with</span></legend>
+          <div class="chips" role="radiogroup" aria-label="Coming with">
+            <button type="button" class="chip" role="radio" aria-checked="true" data-plus="0">Just me</button>
+            <button type="button" class="chip" role="radio" aria-checked="false" data-plus="1">+1 friend</button>
+            <button type="button" class="chip" role="radio" aria-checked="false" data-plus="2">+2 friends</button>
+          </div>
+        </fieldset>
+        <p id="err" class="err" role="alert" hidden></p>
+        <button id="send" class="send" type="submit">Count me in <span aria-hidden="true">🪔</span></button>
+        <p class="fine">Only the organisers see your number, and only to send you the party details.</p>
+      </form>
+
+      <div id="done" class="done" hidden aria-live="polite">
+        <p class="burst" aria-hidden="true">🎆</p>
+        <h3 id="done-h" class="done-h">You're on the list!</h3>
+        <p id="done-p" class="done-p">We'll WhatsApp you the time and place. Start planning the outfit.</p>
+        <a id="share" class="send wa" href="#" target="_blank" rel="noopener">Bring a friend · share on WhatsApp</a>
+        <button id="again" class="link" type="button">RSVP for someone else</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <p><b>Pages of Panvel</b> · a reading circle · Sundays in the park</p>
+  <p><a href="../">pagesofpanvel.in</a> · <a href="../about/">About us</a></p>
+</footer>
+
+<script type="module" src="diwali.js?v=1"></script>
+</body>
+</html>

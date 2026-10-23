@@ -133,5 +133,25 @@ service cloud.firestore {
       allow read: if isOrganiser();
       allow update, delete: if false;
     }
+
+    // ── Party RSVPs, from /diwali ───────────────────────────────────────
+    // No account needed: a name, a WhatsApp number and how many friends
+    // are coming. Anyone may add one well-formed RSVP; nobody may change or
+    // delete one; only the organisers may read them, since they hold phone
+    // numbers. `e` names the event, so a later party can reuse this.
+    function rsvpOk(d) {
+      return d.keys().hasOnly(['e', 'name', 'phone', 'plus', 'at'])
+        && d.e in ['diwali-2026']
+        && d.name is string && d.name.size() >= 1 && d.name.size() <= 60
+        && d.phone is string && d.phone.matches('^[+][0-9]{8,15}$')
+        && d.plus is int && d.plus >= 0 && d.plus <= 3
+        && d.at == request.time;
+    }
+
+    match /rsvp/{id} {
+      allow create: if rsvpOk(request.resource.data);
+      allow read: if isOrganiser();
+      allow update, delete: if false;
+    }
   }
 }
