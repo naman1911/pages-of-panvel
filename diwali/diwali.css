@@ -105,6 +105,8 @@ section{padding-top:64px}
 .facts dd{margin:0;font-weight:600}
 .facts dd a{color:var(--red)}
 .facts .dir{font-weight:400;font-size:14px;color:rgba(36,29,24,.6)}
+.facts .upd{display:block;margin-top:3px;font-weight:400;font-size:14px;line-height:1.4;color:rgba(36,29,24,.7)}
+.facts .upd a{color:#1F8A4C;font-weight:600}
 .form{display:grid;gap:16px;margin-top:20px}
 .field{display:grid;gap:6px;margin:0;padding:0;border:0;min-width:0}
 .field>span,.field legend span{font:10.5px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:rgba(36,29,24,.7)}
