@@ -176,7 +176,7 @@ form.addEventListener("submit", async (e) => {
 function showDone(name, before) {
   const first = name.split(" ")[0];
   $("done-h").textContent = before ? `You're already in, ${first}!` : `You're on the list, ${first}!`;
-  $("done-p").textContent = "See you at My Baagaan. Start planning the outfit." + (DEMO ? " (Demo: nothing was sent.)" : "");
+  $("done-p").textContent = "See you at My Baagaan on Sunday at 2 pm. Start planning the outfit." + (DEMO ? " (Demo: nothing was sent.)" : "");
   form.hidden = true;
   $("done").hidden = false;
 }
@@ -189,7 +189,7 @@ $("again").addEventListener("click", () => {
 });
 
 $("share").href = "https://wa.me/?text=" + encodeURIComponent(
-  "I'm going to the Pages of Panvel Diwali party on Sunday, 1 November 🪔✨ Come along! RSVP in ten seconds: https://pagesofpanvel.in/diwali/");
+  "I'm going to the Pages of Panvel Diwali party on Sunday, 1 November, 2 pm at My Baagaan 🪔✨ Come along! RSVP in ten seconds: https://pagesofpanvel.in/diwali/");
 
 // Back on the page after RSVPing: say so, with a way to add someone else.
 try {
