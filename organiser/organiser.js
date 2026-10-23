@@ -19,6 +19,7 @@
 import { firebaseConfig } from "../js/config.js";
 import { watchFeedback, demoFeedback } from "./feedback.js";
 import { startAccess } from "./access.js";
+import { watchRsvp, demoRsvp } from "./rsvp.js";
 
 const OWNER = "9cb6340ac3ed2a170ef3fc0bb87d8c393567efa3220a7ef781c9991bac7dc0c5";
 const DEMO = new URLSearchParams(location.search).has("demo");
@@ -503,12 +504,13 @@ if (DEMO) {
   live("Sample data");
   render();
   demoFeedback();
+  demoRsvp();
   startAccess({ role: "demo", me: "" });
 } else {
   const [A, U, F] = await Promise.all([import(`${V}/firebase-app.js`), import(`${V}/firebase-auth.js`), import(`${V}/firebase-firestore.js`)]);
   const app = A.initializeApp(firebaseConfig);
   const auth = U.getAuth(app), db = F.getFirestore(app);
-  let unsub = null, unsubFb = null, unsubAccess = null;
+  let unsub = null, unsubFb = null, unsubAccess = null, unsubRsvp = null;
   $("signin").addEventListener("click", async () => {
     try { await U.signInWithPopup(auth, new U.GoogleAuthProvider()); }
     catch (e) { if (e?.code !== "auth/popup-closed-by-user") $("gate-msg").textContent = `Sign-in didn't go through${e?.code ? ` (${e.code})` : ""}. Try again?`; }
@@ -517,6 +519,7 @@ if (DEMO) {
     if (unsub) { unsub(); unsub = null; }
     if (unsubFb) { unsubFb(); unsubFb = null; }
     if (unsubAccess) { unsubAccess(); unsubAccess = null; }
+    if (unsubRsvp) { unsubRsvp(); unsubRsvp = null; }
     data = null; raw = null;
     if (!user) {
       $("gate-msg").textContent = "Sign in with the organiser's Google account.";
@@ -544,6 +547,7 @@ if (DEMO) {
       (snap) => { raw = snap.exists() ? snap.data() : {}; data = analyse(raw); render(); live(`Live · updated ${stamp()}`); },
       (e) => live(`Couldn't read the circle${e?.code ? ` (${e.code})` : ""}`));
     unsubFb = watchFeedback(F, db, user.uid, role);
+    unsubRsvp = watchRsvp(F, db, role);
     unsubAccess = startAccess({ role, me: user.email, F, db });
   });
 }

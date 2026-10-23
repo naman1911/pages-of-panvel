@@ -182,3 +182,11 @@ section{padding-top:44px;scroll-margin-top:56px}
 .access-list .tag{font:10px var(--mono);letter-spacing:.08em;text-transform:uppercase;background:var(--ink);color:var(--cream);padding:3px 8px}
 .access-list .btn.small{margin-top:0;min-height:32px}
 .access-list .none{color:var(--dim);font-size:14px}
+
+/* Party RSVPs (rsvp.js): first on the desk while a party is coming up. */
+.h2-tag{display:inline-block;vertical-align:middle;margin-left:8px;padding:5px 9px 4px;background:var(--mustard);color:var(--ink);font:11px var(--mono);letter-spacing:.06em;text-transform:uppercase;transform:rotate(-2deg)}
+#rsvp .kpis{margin-bottom:14px}
+.rsvp-table{min-width:520px}
+.rsvp-table a{color:var(--green);font-weight:600;text-decoration:none}
+.rsvp-table a:hover{text-decoration:underline}
+.rsvp-table .dup{margin-left:6px;font:10px var(--mono);color:var(--red-dk);font-weight:400}
